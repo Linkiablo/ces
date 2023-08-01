@@ -2,8 +2,8 @@
 #define CPU_H
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* main CPU struct contains registers */

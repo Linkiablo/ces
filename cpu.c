@@ -8,11 +8,17 @@
 #define FLAG_Z 2   // 0b00000010
 #define FLAG_C 1   // 0b00000001
 
-#define READ_8(cpu) (cpu->mem[++(cpu->pc)])
+#define READ_8(cpu) (_read_8(cpu))
 #define READ_16(cpu) (READ_8(cpu) & (READ_8(cpu) << 8))
 
 #define LOAD_8(addr) (*((uint8_t *)addr))
 #define LOAD_16(addr) (LOAD_8(addr) & (LOAD_8(addr + 1) << 8))
+
+/* private method because of possible undefined order of operations */
+uint8_t _read_8(cpu_t *cpu) {
+    uint16_t new_pc = ++(cpu->pc);
+    return cpu->mem[new_pc];
+}
 
 void init_cpu(cpu_t *cpu, size_t mem_size) {
     memset(cpu, 0, sizeof(cpu_t));
@@ -52,7 +58,10 @@ void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
     case ACCUMULATOR:
         return &(cpu->a);
     case IMMEDIATE:
-        return &READ_8(cpu);
+	// increment PC
+	READ_8(cpu);
+	// return new address
+        return cpu->mem + cpu->pc;
     case ABSOLUTE:
         return cpu->mem + READ_16(cpu);
     case ZERO_PAGE:
@@ -98,7 +107,6 @@ void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
 //     (indirect),Y	ADC (oper),Y	71	2	5*
 void adc(cpu_t *cpu, enum address_mode mode) {
     uint8_t *oper = (uint8_t *)get_oper_ptr(cpu, mode);
-
     // carry works, because carry flag is the first bit
     int16_t res = *oper + cpu->a + (cpu->p | FLAG_C);
 
@@ -721,4 +729,4 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TYA	98	1	2
+//     implied	TYA	98	1	82
