@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html class="client-js" dir="ltr" lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<title>CPU ALL - Nesdev wiki</title>
+<script>document.documentElement.className="client-js";RLCONF={"wgBreakFrames":!1,"wgSeparatorTransformTable":["",""],"wgDigitTransformTable":["",""],"wgDefaultDateFormat":"dmy","wgMonthNames":["","January","February","March","April","May","June","July","August","September","October","November","December"],"wgRequestId":"YdXaawBuUB95ZE1-rE1qUAAAAAw","wgCSPNonce":!1,"wgCanonicalNamespace":"","wgCanonicalSpecialPageName":!1,"wgNamespaceNumber":0,"wgPageName":"CPU_ALL","wgTitle":"CPU ALL","wgCurRevisionId":1250,"wgRevisionId":1250,"wgArticleId":124,"wgIsArticle":!0,"wgIsRedirect":!1,"wgAction":"view","wgUserName":null,"wgUserGroups":["*"],"wgCategories":["Pinouts"],"wgPageContentLanguage":"en","wgPageContentModel":"wikitext","wgRelevantPageName":"CPU_ALL","wgRelevantArticleId":124,"wgIsProbablyEditable":!1,"wgRelevantPageIsProbablyEditable":!1,"wgRestrictionEdit":[],"wgRestrictionMove":[]};RLSTATE={"site.styles":"ready","noscript":"ready","user.styles":"ready","user":"ready",
+"user.options":"loading","ext.cite.styles":"ready","skins.monobook.responsive":"ready"};RLPAGEMODULES=["ext.cite.ux-enhancements","site","mediawiki.page.ready","mediawiki.toc","skins.monobook.mobile"];</script>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.loader.implement("user.options@1hzgi",function($,jQuery,require,module){/*@nomin*/mw.user.tokens.set({"patrolToken":"+\\","watchToken":"+\\","csrfToken":"+\\"});
+});});</script>
+<link rel="stylesheet" href="CPU%20ALL%20-%20Nesdev%20wiki_files/load.css">
+<script async="" src="CPU%20ALL%20-%20Nesdev%20wiki_files/load.php"></script>
+<style>
+body{margin:0}main{display:block}hr{box-sizing:content-box;height:0;overflow:visible}abbr[title]{border-bottom:1px dotted;cursor:help}@supports (text-decoration:underline dotted){abbr[title]{border-bottom:0;text-decoration:underline dotted}}pre,code,tt,kbd,samp{font-family:monospace,monospace}sub,sup{line-height:1}img{border:0}button,input,optgroup,select,textarea{margin:0}button::-moz-focus-inner,[type='button']::-moz-focus-inner,[type='reset']::-moz-focus-inner,[type='submit']::-moz-focus-inner{border-style:none;padding:0}legend{color:inherit;padding:0}  .messagebox,.errorbox,.warningbox,.successbox{color:#000;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;margin-bottom:16px;border:1px solid;padding:12px 24px;word-wrap:break-word; overflow-wrap:break-word;overflow:hidden; }.messagebox :only-child,.errorbox :only-child,.warningbox :only-child,.successbox :only-child{margin:0}.messagebox h2,.errorbox h2,.warningbox h2,.successbox h2{color:inherit;display:inline;margin:0 0.5em 0 0;border:0;font-size:1em;font-weight:bold}.messagebox .mw-logevent-loglines li,.errorbox .mw-logevent-loglines li,.warningbox .mw-logevent-loglines li,.successbox .mw-logevent-loglines li{font-size:90%}.messagebox{background-color:#eaecf0;border-color:#a2a9b1}.errorbox{background-color:#fee7e6;border-color:#d33}.warningbox{background-color:#fef6e7;border-color:#fc3}.successbox{background-color:#d5fdf4;border-color:#14866d}   .toctogglecheckbox:checked ~ ul{display:none}
+.mw-wiki-logo{background-image:url(/w/resources/assets/NESdevWikiLogo7.png?446da)}
+@media print {
+	.noprint,.catlinks,.magnify,.mw-cite-backlink,.mw-editsection,.mw-editsection-like,.mw-hidden-catlinks,.mw-indicators,.mw-redirectedfrom,.patrollink,.usermessage,#column-one,#footer-places,#mw-navigation,#siteNotice,#f-poweredbyico,#f-copyrightico,li#about,li#disclaimer,li#mobileview,li#privacy{display:none} body{background:#fff;color:#000;margin:0;padding:0} a{background:none !important; padding:0 !important; }a,a.external,a.new,a.stub{color:inherit !important; text-decoration:inherit !important; } .mw-parser-output a.external.text:after,.mw-parser-output a.external.autonumber:after{content:' (' attr(href) ')';word-break:break-all;word-wrap:break-word} .mw-parser-output a.external.text[href^='//']:after,.mw-parser-output a.external.autonumber[href^='//']:after{content:' (https:' attr(href) ')'}dt{font-weight:bold}h1,h2,h3,h4,h5,h6{font-weight:bold; page-break-after:avoid;page-break-before:avoid}p{margin:1em 0;line-height:1.2; orphans:3;widows:3}img,figure,.wikitable,.thumb{ page-break-inside:avoid}img{border:0;vertical-align:middle}pre,.mw-code{background:#fff;color:#000;border:1pt dashed #000;padding:1em;font-size:8pt;white-space:pre-wrap; overflow-x:hidden; word-wrap:break-word} sup,sub{line-height:1}ul{list-style-type:square} #globalWrapper{width:100% !important; min-width:0 !important; }.mw-body{background:#fff;color:#000;border:0 !important; padding:0 !important; margin:0 !important; direction:ltr}#column-content{margin:0 !important; }#column-content .mw-body{padding:1em;margin:0 !important; }.toc{background-color:#f9f9f9;border:1pt solid #aaa;padding:5px;display:table} .tocnumber,.toctext{display:table-cell} .tocnumber{padding-left:0;padding-right:0.5em} .mw-content-ltr .tocnumber{padding-left:0;padding-right:0.5em} .mw-content-rtl .tocnumber{padding-left:0.5em;padding-right:0}  table.floatright,div.floatright,div.tright{float:right;clear:right} table.floatleft,div.floatleft,div.tleft{float:left;clear:left} div.tleft{margin:0.5em 1.4em 1.3em 0} div.tright{margin:0.5em 0 1.3em 1.4em} table.floatright,div.floatright{margin:0 0 0.5em 0.5em;border:0} table.floatleft,div.floatleft{margin:0 0.5em 0.5em 0;border:0}.center{text-align:center} div.thumb{background-color:transparent;width:auto}div.thumb a{border-bottom:0}div.thumbinner{background-color:#fff;border:0;border-radius:2px;padding:5px;font-size:10pt;color:#666;text-align:center; overflow:hidden;min-width:100px}.thumbcaption{text-align:left;line-height:1.4;padding:3px}.thumbborder{border:1pt solid #ddd} .wikitable{background:#fff;margin:1em 0;border:1pt solid #aaa;border-collapse:collapse;font-size:10pt}.wikitable > caption{padding:5px;font-size:10pt}.wikitable > tr > th,.wikitable > tr > td,.wikitable > * > tr > th,.wikitable > * > tr > td{ background:#fff !important;  color:#000 !important; border:1pt solid #aaa;padding:0.4em 0.6em}.wikitable > tr > th,.wikitable > * > tr > th{text-align:center}table.listing,table.listing td{border:1pt solid #000;border-collapse:collapse} .catlinks ul{display:inline;padding:0;list-style:none none}.catlinks li{display:inline-block;line-height:1.15;margin:0.1em 0;border-left:1pt solid #aaa;padding:0 0.4em}.catlinks li:first-child{border-left:0;padding-left:0.2em} .printfooter{padding:1em 0}#footer{background:#fff;color:#000;margin-top:1em;border-top:1pt solid #aaa;padding-top:5px;direction:ltr}  .toctogglecheckbox:checked + .toctitle{display:none}}
+@media screen {
+	div.tright,div.floatright,table.floatright{clear:right;float:right} div.tleft,div.floatleft,table.floatleft{float:left;clear:left}  .mw-content-ltr .thumbcaption{text-align:left} .mw-content-ltr .magnify{float:right} .mw-content-rtl .thumbcaption{text-align:right} .mw-content-rtl .magnify{float:left}  div.floatright,table.floatright{margin:0 0 0.5em 0.5em} div.floatleft,table.floatleft{margin:0 0.5em 0.5em 0} div.thumb{margin-bottom:0.5em;width:auto;background-color:transparent}div.thumbinner{border:1px solid #c8ccd1;padding:3px;background-color:#f8f9fa;font-size:94%;text-align:center; overflow:hidden}.thumbimage{background-color:#ffffff;border:1px solid #c8ccd1}.thumbcaption{border:0;line-height:1.4em;padding:3px;font-size:94%; text-align:left}.magnify{ float:right;margin-left:3px}.magnify a{display:block; text-indent:15px;white-space:nowrap;overflow:hidden; width:15px;height:11px;  background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.png?4f704);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e); -moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none}.thumbborder{border:1px solid #eaecf0}  .mw-content-ltr .magnify{margin-left:3px;margin-right:0} .mw-content-ltr .magnify a{ background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.png?4f704);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e)} .mw-content-rtl .magnify{margin-left:0;margin-right:3px} .mw-content-rtl .magnify a{ background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-rtl.png?a9fb3);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-rtl.svg?38fd5)} div.tright{margin:0.5em 0 1.3em 1.4em} div.tleft{margin:0.5em 1.4em 1.3em 0}      .mw-parser-output:after{clear:both;content:'';display:block}.mw-parser-output a.external.free{word-wrap:break-word}  .rtl .mw-parser-output a.external.free,.rtl .mw-parser-output a.external.autonumber{direction:ltr;unicode-bidi:embed} .mw-hide-empty-elt .mw-parser-output .mw-empty-elt{display:none}   .catlinks{border:1px solid #a2a9b1;background-color:#f8f9fa;padding:5px;margin-top:1em;clear:both}textarea{  border:1px solid #c8ccd1}.editOptions{background-color:#eaecf0;color:#202122;border:1px solid #c8ccd1;border-top:0;padding:1em 1em 1.5em 1em;margin-bottom:2em}.usermessage{background-color:#ffce7b;border:1px solid #ffa500;color:#000;font-weight:bold;margin:2em 0 1em;padding:0.5em 1em;vertical-align:middle}#siteNotice{position:relative;text-align:center;margin:0}#localNotice{margin-bottom:0.9em} #siteSub{display:none}#contentSub,#contentSub2{font-size:84%;line-height:1.2em;margin:0 0 1.4em 1em;color:#54595d;width:auto}span.subpages{display:block} .emptyPortlet{display:none}.printfooter,.client-nojs #t-print{display:none; } .mw-indicators{float:right}.mw-editsection{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none} .mw-editsection,.mw-editsection-like{font-size:small;font-weight:normal;margin-left:1em;vertical-align:baseline; line-height:1em}  .mw-content-ltr .mw-editsection,.mw-content-rtl .mw-content-ltr .mw-editsection{margin-left:1em} .mw-content-rtl .mw-editsection,.mw-content-ltr .mw-content-rtl .mw-editsection{margin-right:1em}      a{text-decoration:none;color:#0645ad;background:none}a:not([href]){cursor:pointer; }a:visited{color:#0b0080}a:active{color:#faa700}a:hover,a:focus{text-decoration:underline}a:lang(ar),a:lang(kk-arab),a:lang(mzn),a:lang(ps),a:lang(ur){text-decoration:none}a.stub{color:#723}a.new,#p-personal a.new{color:#d33} a.mw-selflink{color:inherit;font-weight:bold;text-decoration:inherit}a.mw-selflink:hover{cursor:inherit;text-decoration:inherit}a.mw-selflink:active,a.mw-selflink:visited{color:inherit}a.new:visited,#p-personal a.new:visited{color:#a55858} .mw-parser-output a.extiw,.mw-parser-output a.external{color:#36b}.mw-parser-output a.extiw:visited,.mw-parser-output a.external:visited{color:#636; }.mw-parser-output a.extiw:active,.mw-parser-output a.external:active{color:#b63} .mw-underline-always a{text-decoration:underline}.mw-underline-never a{text-decoration:none} .plainlinks a.external{background:none !important; padding:0 !important; } img{border:0; vertical-align:middle}hr{height:1px;background-color:#a2a9b1;border:0;margin:0.2em 0} h1,h2,h3,h4,h5,h6{color:#000;margin:0;padding-top:0.5em;padding-bottom:0.17em;overflow:hidden}h1,h2{margin-bottom:0.6em;border-bottom:1px solid #a2a9b1}h3,h4,h5{margin-bottom:0.3em}h1{font-size:188%;font-weight:normal}h2{font-size:150%;font-weight:normal}h3{font-size:128%}h4{font-size:116%}h5{font-size:108%}h6{font-size:100%}p{margin:0.4em 0 0.5em 0}p img{margin:0}ul{margin:0.3em 0 0 1.6em;padding:0}ol{margin:0.3em 0 0 3.2em;padding:0;list-style-image:none}li{margin-bottom:0.1em}dt{font-weight:bold;margin-bottom:0.1em}dl{margin-top:0.2em;margin-bottom:0.5em}dd{margin-left:1.6em;margin-bottom:0.1em} pre,code,tt,kbd,samp,.mw-code{ font-family:monospace,monospace}pre,code,.mw-code{background-color:#f8f9fa;color:#000;border:1px solid #eaecf0}code{border-radius:2px;padding:1px 4px}pre,.mw-code{padding:1em; white-space:pre-wrap; overflow-x:hidden; word-wrap:break-word} table{font-size:100%} fieldset{border:1px solid #2a4b8d;margin:1em 0 1em 0;padding:0 1em 1em}legend{padding:0.5em;font-size:95%}form{border:0;margin:0}textarea{display:block;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;padding:0.1em} .center{width:100%;text-align:center}*.center *{margin-left:auto;margin-right:auto} .small{font-size:94%}table.small{font-size:100%}       .mw-content-ltr{ direction:ltr}.mw-content-rtl{ direction:rtl} .sitedir-ltr textarea,.sitedir-ltr input,textarea[dir='ltr'][dir='ltr'],input[dir='ltr'][dir='ltr']{ direction:ltr}.sitedir-rtl textarea,.sitedir-rtl input,textarea[dir='rtl'][dir='rtl'],input[dir='rtl'][dir='rtl']{ direction:rtl}.mw-userlink{word-wrap:break-word;-webkit-hyphens:auto;-moz-hyphens:auto;-ms-hyphens:auto;hyphens:auto;unicode-bidi:embed} mark{background-color:#ff0;color:#000}  wbr{display:inline-block}  input[type='submit'],input[type='button'],input[type='reset'],input[type='file']{direction:ltr} abbr[title],.explain[title]{border-bottom:1px dotted;cursor:help}@supports (text-decoration:underline dotted){abbr[title],.explain[title]{border-bottom:0;text-decoration:underline dotted}} span.comment{font-style:italic;unicode-bidi:-moz-isolate;unicode-bidi:isolate} li span.deleted,span.history-deleted{text-decoration:line-through;color:#72777d;font-style:italic}  td.mw-label{text-align:right;vertical-align:middle}td.mw-input{text-align:left}td.mw-submit{text-align:left;white-space:nowrap}     div.tright,div.floatright,table.floatright{clear:right;float:right} div.tleft,div.floatleft,table.floatleft{float:left;clear:left}  .mw-content-ltr .thumbcaption{text-align:left} .mw-content-ltr .magnify{float:right} .mw-content-rtl .thumbcaption{text-align:right} .mw-content-rtl .magnify{float:left}  div.floatright,table.floatright{margin:0 0 0.5em 0.5em} div.floatleft,table.floatleft{margin:0 0.5em 0.5em 0} div.thumb{margin-bottom:0.5em;width:auto;background-color:transparent}div.thumbinner{border:1px solid #c8ccd1;padding:3px;background-color:#f8f9fa;font-size:94%;text-align:center; overflow:hidden}.thumbimage{background-color:#ffffff;border:1px solid #c8ccd1}.thumbcaption{border:0;line-height:1.4em;padding:3px;font-size:94%; text-align:left}.magnify{ float:right;margin-left:3px}.magnify a{display:block; text-indent:15px;white-space:nowrap;overflow:hidden; width:15px;height:11px;  background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.png?4f704);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e); -moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none}.thumbborder{border:1px solid #eaecf0}  .mw-content-ltr .magnify{margin-left:3px;margin-right:0} .mw-content-ltr .magnify a{ background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.png?4f704);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e)} .mw-content-rtl .magnify{margin-left:0;margin-right:3px} .mw-content-rtl .magnify a{ background-image:url(/w/resources/src/mediawiki.skinning/images/magnify-clip-rtl.png?a9fb3);background-image:linear-gradient(transparent,transparent),url(/w/resources/src/mediawiki.skinning/images/magnify-clip-rtl.svg?38fd5)} div.tright{margin:0.5em 0 1.3em 1.4em} div.tleft{margin:0.5em 1.4em 1.3em 0} #catlinks{ text-align:left}.catlinks ul{display:inline;margin:0;padding:0;list-style:none none}.catlinks li{display:inline-block;line-height:1.25em;border-left:1px solid #a2a9b1;margin:0.125em 0;padding:0 0.5em; }.catlinks li:first-child{padding-left:0.25em;border-left:0}.catlinks li a.mw-redirect{font-style:italic} .mw-hidden-cats-hidden,.catlinks-allhidden{display:none}   #mw-credits a{unicode-bidi:embed} #mw-clearyourcache{direction:ltr;unicode-bidi:embed} div.patrollink{font-size:75%;text-align:right} #mw-revision-info,#mw-revision-info-current,#mw-revision-nav{direction:ltr} p.mw-protect-editreasons,p.mw-filedelete-editreasons,p.mw-delete-editreasons{font-size:90%;text-align:right} .autocomment,.autocomment a,.autocomment a:visited{color:#72777d}  span.mw-revdelundel-link,strong.mw-revdelundel-link{font-size:90%}span.mw-revdelundel-hidden,input.mw-revdelundel-hidden{visibility:hidden} a.new{color:#ba0000} .wikitable{background-color:#f8f9fa;color:#202122;margin:1em 0;border:1px solid #a2a9b1;border-collapse:collapse}.wikitable > tr > th,.wikitable > tr > td,.wikitable > * > tr > th,.wikitable > * > tr > td{border:1px solid #a2a9b1;padding:0.2em 0.4em}.wikitable > tr > th,.wikitable > * > tr > th{background-color:#eaecf0;text-align:center}.wikitable > caption{font-weight:bold} .error,.warning,.success{font-size:larger}.error{color:#d33}.warning{color:#ac6600}.success{color:#14866d}  .mw-infobox{border:2px solid #fc3;margin:0.5em;clear:left;overflow:hidden}.mw-infobox-left{margin:7px;float:left;width:35px}.mw-infobox-right{margin:0.5em 0.5em 0.5em 49px}.visualClear{clear:both} .mw-datatable{border:1px solid #a2a9b1;border-collapse:collapse}.mw-datatable td,.mw-datatable th{border:1px solid #a2a9b1;padding:0.2em 0.4em}.mw-datatable th{background-color:#eaeeff}.mw-datatable td{background-color:#fff}.mw-datatable tr:hover td{background-color:#eaf3ff}.mw-ajax-loader{background-image:url(/w/resources/src/mediawiki.skinning/images/ajax-loader.gif?57f34);background-position:center center;background-repeat:no-repeat;padding:16px;position:relative;top:-16px}.mw-small-spinner{padding:10px !important; margin-right:0.6em;background-image:url(/w/resources/src/mediawiki.skinning/images/spinner.gif?ca65b);background-position:center center;background-repeat:no-repeat} .mw-content-ltr ul,.mw-content-rtl .mw-content-ltr ul{ margin:0.3em 0 0 1.6em;padding:0}.mw-content-rtl ul,.mw-content-ltr .mw-content-rtl ul{ margin:0.3em 1.6em 0 0;padding:0}.mw-content-ltr ol,.mw-content-rtl .mw-content-ltr ol{ margin:0.3em 0 0 3.2em;padding:0}.mw-content-rtl ol,.mw-content-ltr .mw-content-rtl ol{ margin:0.3em 3.2em 0 0;padding:0} .mw-content-ltr dd,.mw-content-rtl .mw-content-ltr dd{margin-left:1.6em;margin-right:0} .mw-content-rtl dd,.mw-content-ltr .mw-content-rtl dd{margin-right:1.6em;margin-left:0}  h1:lang(anp),h1:lang(as),h1:lang(bh),h1:lang(bho),h1:lang(bn),h1:lang(gu),h1:lang(hi),h1:lang(kn),h1:lang(ks),h1:lang(ml),h1:lang(mr),h1:lang(my),h1:lang(mai),h1:lang(ne),h1:lang(new),h1:lang(or),h1:lang(pa),h1:lang(pi),h1:lang(sa),h1:lang(ta),h1:lang(te){line-height:1.6em !important; } h2:lang(anp),h3:lang(anp),h4:lang(anp),h5:lang(anp),h6:lang(anp),h2:lang(as),h3:lang(as),h4:lang(as),h5:lang(as),h6:lang(as),h2:lang(bho),h3:lang(bho),h4:lang(bho),h5:lang(bho),h6:lang(bho),h2:lang(bh),h3:lang(bh),h4:lang(bh),h5:lang(bh),h6:lang(bh),h2:lang(bn),h3:lang(bn),h4:lang(bn),h5:lang(bn),h6:lang(bn),h2:lang(gu),h3:lang(gu),h4:lang(gu),h5:lang(gu),h6:lang(gu),h2:lang(hi),h3:lang(hi),h4:lang(hi),h5:lang(hi),h6:lang(hi),h2:lang(kn),h3:lang(kn),h4:lang(kn),h5:lang(kn),h6:lang(kn),h2:lang(ks),h3:lang(ks),h4:lang(ks),h5:lang(ks),h6:lang(ks),h2:lang(ml),h3:lang(ml),h4:lang(ml),h5:lang(ml),h6:lang(ml),h2:lang(mr),h3:lang(mr),h4:lang(mr),h5:lang(mr),h6:lang(mr),h2:lang(my),h3:lang(my),h4:lang(my),h5:lang(my),h6:lang(my),h2:lang(mai),h3:lang(mai),h4:lang(mai),h5:lang(mai),h6:lang(mai),h2:lang(ne),h3:lang(ne),h4:lang(ne),h5:lang(ne),h6:lang(ne),h2:lang(new),h3:lang(new),h4:lang(new),h5:lang(new),h6:lang(new),h2:lang(or),h3:lang(or),h4:lang(or),h5:lang(or),h6:lang(or),h2:lang(pa),h3:lang(pa),h4:lang(pa),h5:lang(pa),h6:lang(pa),h2:lang(pi),h3:lang(pi),h4:lang(pi),h5:lang(pi),h6:lang(pi),h2:lang(sa),h3:lang(sa),h4:lang(sa),h5:lang(sa),h6:lang(sa),h2:lang(ta),h3:lang(ta),h4:lang(ta),h5:lang(ta),h6:lang(ta),h2:lang(te),h3:lang(te),h4:lang(te),h5:lang(te),h6:lang(te){line-height:1.4em}  ol:lang(azb) li,ol:lang(bcc) li,ol:lang(bgn) li,ol:lang(bqi) li,ol:lang(fa) li,ol:lang(glk) li,ol:lang(kk-arab) li,ol:lang(lrc) li,ol:lang(luz) li,ol:lang(mzn) li{list-style-type:persian}ol:lang(ckb) li,ol:lang(sdh) li{list-style-type:arabic-indic}ol:lang(hi) li,ol:lang(mai) li,ol:lang(mr) li,ol:lang(ne) li{list-style-type:devanagari}ol:lang(as) li,ol:lang(bn) li{list-style-type:bengali}ol:lang(or) li{list-style-type:oriya} .toc .toctitle{direction:ltr}  .mw-content-ltr .toc ul,.mw-content-rtl .mw-content-ltr .toc ul{text-align:left} .mw-content-rtl .toc ul,.mw-content-ltr .mw-content-rtl .toc ul{text-align:right} .mw-content-ltr .toc ul ul,.mw-content-rtl .mw-content-ltr .toc ul ul{margin:0 0 0 2em} .mw-content-rtl .toc ul ul,.mw-content-ltr .mw-content-rtl .toc ul ul{margin:0 2em 0 0} .printfooter{display:none} .xdebug-error{position:absolute;z-index:99}.mw-editsection{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none} .mw-editsection,.mw-editsection-like{font-size:small;font-weight:normal;margin-left:1em;vertical-align:baseline; line-height:1em}  .mw-content-ltr .mw-editsection,.mw-content-rtl .mw-content-ltr .mw-editsection{margin-left:1em} .mw-content-rtl .mw-editsection,.mw-content-ltr .mw-content-rtl .mw-editsection{margin-right:1em} sup,sub{line-height:1}   .toc,.toccolours{border:1px solid #a2a9b1;background-color:#f8f9fa;padding:5px;font-size:95%} .toc{display:table;padding:7px}.toc h2{display:inline;border:0;padding:0;font-size:100%;font-weight:bold}.toc .toctitle{text-align:center}.toc ul{list-style-type:none;list-style-image:none;margin:0.3em 0;padding:0;text-align:left}.toc ul ul{margin:0 0 0 2em} table.toc{border-collapse:collapse; }table.toc td{padding:0} .tocnumber,.toctext{display:table-cell; text-decoration:inherit} .tocnumber{color:#202122;padding-left:0;padding-right:0.5em}.mw-content-ltr .tocnumber{ padding-left:0; padding-right:0.5em}.mw-content-rtl .tocnumber{ padding-left:0.5em; padding-right:0}  :not(:checked) > .toctogglecheckbox{display:inline !important; position:absolute;opacity:0;z-index:-1}.toctogglespan{font-size:94%}  :not(:checked) > .toctogglespan:before{content:' ['}:not(:checked) > .toctogglespan:after{content:']'} .toctogglelabel{cursor:pointer;color:#0645ad}.toctogglelabel:hover{text-decoration:underline}  .toctogglecheckbox:focus + .toctitle .toctogglelabel{text-decoration:underline;outline:dotted 1px; outline:auto -webkit-focus-ring-color; } .toctogglecheckbox:checked + .toctitle .toctogglelabel:after{content:'show'}.toctogglecheckbox:not(:checked) + .toctitle .toctogglelabel:after{content:'hide'} .toc .toctitle{direction:ltr}  .mw-content-ltr .toc ul,.mw-content-rtl .mw-content-ltr .toc ul{text-align:left} .mw-content-rtl .toc ul,.mw-content-ltr .mw-content-rtl .toc ul{text-align:right} .mw-content-ltr .toc ul ul,.mw-content-rtl .mw-content-ltr .toc ul ul{margin:0 0 0 2em} .mw-content-rtl .toc ul ul,.mw-content-ltr .mw-content-rtl .toc ul ul{margin:0 2em 0 0}}
+@media screen and (max-width: 550px) {
+	#sidebar .generated-sidebar,#p-search-mobilejs,#p-tb-mobilejs,#p-lang-mobilejs,#t-contributions{display:none}#p-cactions,#p-personal,#p-tb,#p-lang,#sidebar-mobilejs{position:absolute;top:-9999px;left:0}#p-cactions.mobile-menu-active,#p-personal.mobile-menu-active,#p-tb.mobile-menu-active,#p-lang.mobile-menu-active,#sidebar-mobilejs.mobile-menu-active{top:2em;left:0}.mobile-menu-active{position:absolute;z-index:10000;background:#ffffff;border:solid 1px #fabd23;border-left:0;padding:2em 2em 0 1.5em;font-size:125%}.mobile-menu-active *[id^='ca-nstab-'],.mobile-menu-active #ca-talk,.mobile-menu-active #ca-edit{position:absolute;top:-9999px;left:0}.mobile-menu-active ul{padding-top:1em}.mobile-menu-active li{white-space:nowrap}.mobile-menu-active a{display:block;padding:0.65em 0}.mobile-menu-active h3:first-child{margin-right:2em}.mobile-menu-active .pBody{margin-bottom:2em}.mobile-menu-active .mobile-close-button{width:20px;height:20px;background-image:url(/w/skins/MonoBook/resources/images/icon-close.svg?a9af1);background-position:0 0;background-repeat:no-repeat;position:absolute;top:1em;right:0.75em;cursor:pointer}.menus-cover{display:none;top:0;left:0;width:100%;height:100%;z-index:9999}.menus-cover.visible{display:block}#menus-cover{position:fixed;opacity:0.45;background-color:#ffffff}#menus-cover-background{position:absolute;background-color:#f9f9f9;background-image:url(/w/skins/MonoBook/resources/images/headbg.svg?0be07);background-position:0 0;background-repeat:no-repeat;opacity:0.55}#p-cactions-mobile li#ca-edit-mobile a{background-image:url(/w/skins/MonoBook/resources/images/icon-edit.svg?badf7)}#p-cactions-mobile li#t-contributions-mobile a{background-image:url(/w/skins/MonoBook/resources/images/icon-user.svg?9bf49)}}
+.cite-accessibility-label{ top:-99999px;clip:rect(1px,1px,1px,1px); position:absolute !important;padding:0 !important;border:0 !important;height:1px !important;width:1px !important; overflow:hidden}:target .mw-cite-targeted-backlink{font-weight:bold}.mw-cite-up-arrow-backlink{display:none}:target .mw-cite-up-arrow-backlink{display:inline}:target .mw-cite-up-arrow{display:none}
+@media screen {
+	.toctoggle{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none;font-size:94%}}</style><meta name="ResourceLoaderDynamicStyles" content="">
+<link rel="stylesheet" href="CPU%20ALL%20-%20Nesdev%20wiki_files/load_002.css">
+<meta name="generator" content="MediaWiki 1.36.1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0">
+<link rel="shortcut icon" href="https://wiki.nesdev.org/favicon.ico">
+<link rel="search" type="application/opensearchdescription+xml" href="https://wiki.nesdev.org/w/opensearch_desc.php" title="Nesdev wiki (en)">
+<link rel="EditURI" type="application/rsd+xml" href="https://wiki.nesdev.org/w/api.php?action=rsd">
+<link rel="alternate" type="application/atom+xml" title="Nesdev wiki Atom feed" href="https://wiki.nesdev.org/w/index.php?title=Special:RecentChanges&amp;feed=atom">
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-CPU_ALL rootpage-CPU_ALL skin-monobook action-view skin--responsive"><div id="globalWrapper"><div id="column-content"><div id="content" class="mw-body" role="main"><a id="top"></a><div class="mw-indicators mw-body-content">
+</div>
+<h1 id="firstHeading" class="firstHeading" lang="en">CPU ALL</h1><div id="bodyContent" class="mw-body-content"><div id="siteSub">From Nesdev wiki</div><div id="contentSub" dir="ltr" lang="en"></div><div id="jump-to-nav"></div><a href="#column-one" class="mw-jump-link">Jump to navigation</a><a href="#searchInput" class="mw-jump-link">Jump to search</a><!-- start content --><div id="mw-content-text" dir="ltr" class="mw-content-ltr" lang="en"><div class="mw-parser-output"><div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" style="display:none"><div class="toctitle" dir="ltr" lang="en"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#CPU"><span class="tocnumber">1</span> <span class="toctext">CPU</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Sections"><span class="tocnumber">1.1</span> <span class="toctext">Sections</span></a></li>
+<li class="toclevel-2"><a href="#CPU_signals_and_frequencies"><span class="tocnumber">1.2</span> <span class="toctext">CPU signals and frequencies</span></a></li>
+<li class="toclevel-2"><a href="#Notes"><span class="tocnumber">1.3</span> <span class="toctext">Notes</span></a></li>
+<li class="toclevel-2"><a href="#See_also"><span class="tocnumber">1.4</span> <span class="toctext">See also</span></a></li>
+<li class="toclevel-2"><a href="#References"><span class="tocnumber">1.5</span> <span class="toctext">References</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-2"><a href="#Memory_map"><span class="tocnumber">2</span> <span class="toctext">Memory map</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Pin_out_and_signal_description"><span class="tocnumber">3</span> <span class="toctext">Pin out and signal description</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Pin_out"><span class="tocnumber">3.1</span> <span class="toctext">Pin out</span></a></li>
+<li class="toclevel-2"><a href="#Signal_description"><span class="tocnumber">3.2</span> <span class="toctext">Signal description</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-4"><a href="#Power_up_state"><span class="tocnumber">4</span> <span class="toctext">Power up state</span></a>
+<ul>
+<li class="toclevel-2"><a href="#At_power-up"><span class="tocnumber">4.1</span> <span class="toctext">At power-up</span></a></li>
+<li class="toclevel-2"><a href="#After_reset"><span class="tocnumber">4.2</span> <span class="toctext">After reset</span></a></li>
+<li class="toclevel-2"><a href="#See_also_2"><span class="tocnumber">4.3</span> <span class="toctext">See also</span></a></li>
+<li class="toclevel-2"><a href="#Notes_2"><span class="tocnumber">4.4</span> <span class="toctext">Notes</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-5"><a href="#Status_flag_behavior"><span class="tocnumber">5</span> <span class="toctext">Status flag behavior</span></a>
+<ul>
+<li class="toclevel-2"><a href="#C:_Carry"><span class="tocnumber">5.1</span> <span class="toctext">C: Carry</span></a></li>
+<li class="toclevel-2"><a href="#Z:_Zero"><span class="tocnumber">5.2</span> <span class="toctext">Z: Zero</span></a></li>
+<li class="toclevel-2"><a href="#I:_Interrupt_Disable"><span class="tocnumber">5.3</span> <span class="toctext">I: Interrupt Disable</span></a></li>
+<li class="toclevel-2"><a href="#D:_Decimal"><span class="tocnumber">5.4</span> <span class="toctext">D: Decimal</span></a></li>
+<li class="toclevel-2"><a href="#V:_Overflow"><span class="tocnumber">5.5</span> <span class="toctext">V: Overflow</span></a></li>
+<li class="toclevel-2"><a href="#N:_Negative"><span class="tocnumber">5.6</span> <span class="toctext">N: Negative</span></a></li>
+<li class="toclevel-2"><a href="#The_B_flag"><span class="tocnumber">5.7</span> <span class="toctext">The B flag</span></a></li>
+<li class="toclevel-2"><a href="#External_links"><span class="tocnumber">5.8</span> <span class="toctext">External links</span></a>
+<ul>
+<li class="toclevel-3"><a href="#References_2"><span class="tocnumber">5.8.1</span> <span class="toctext">References</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-6"><a href="#References_3"><span class="tocnumber">6</span> <span class="toctext">References</span></a></li>
+</ul>
+</div>
+
+<h1><span class="mw-headline" id="CPU">CPU</span></h1>
+<p>The NES CPU core is based on the 6502 processor and runs at approximately 1.79 MHz (1.66 MHz in a PAL NES). It is made by <a rel="nofollow" class="external text" href="http://en.wikipedia.org/wiki/Ricoh">Ricoh</a> and lacks the MOS6502's decimal mode. In the NTSC NES, the <a rel="nofollow" class="external text" href="http://en.wikipedia.org/wiki/Ricoh_2A03">RP2A03</a> chip contains the CPU and APU; in the PAL NES, the CPU and APU are contained within the <a rel="nofollow" class="external text" href="http://en.wikipedia.org/wiki/Ricoh_2A03">RP2A07</a> chip. 
+</p>
+<h3><span class="mw-headline" id="Sections">Sections</span></h3>
+<ul><li><a href="https://wiki.nesdev.org/w/index.php?title=6502_instructions" title="6502 instructions">CPU instructions</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_addressing_modes" title="CPU addressing modes">CPU addressing modes</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_memory_map" title="CPU memory map">CPU memory map</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state" title="CPU power up state">CPU power-up state</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_registers" title="CPU registers">CPU registers</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_status_flag_behavior" class="mw-redirect" title="CPU status flag behavior">CPU status flag behavior</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_interrupts" title="CPU interrupts">CPU interrupts</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_unofficial_opcodes" title="CPU unofficial opcodes">Unofficial opcodes</a></li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=CPU_pin_out_and_signal_description" title="CPU pin out and signal description">CPU pin-out and signals</a>, and other <a href="https://wiki.nesdev.org/w/index.php?title=Hardware_pinout" title="Hardware pinout">hardware pin-outs</a></li></ul>
+<h3><span class="mw-headline" id="CPU_signals_and_frequencies">CPU signals and frequencies</span></h3>
+<p>The CPU generates its clock signal by dividing the master clock signal.
+</p>
+<table class="tabular">
+
+<tbody><tr>
+<th>Rate</th>
+<th>NTSC NES/Famicom</th>
+<th>PAL NES</th>
+<th>Dendy
+</th></tr>
+<tr>
+<td>Color subcarrier frequency <i>f<sub>sc</sub></i> (exact)</td>
+<td>3579545.<span style="border-top: 1px solid">45</span> Hz (39375000/11 Hz)</td>
+<td>4433618.75 Hz</td>
+<td>4433618.75 Hz
+</td></tr>
+<tr>
+<td>Color subcarrier frequency <i>f<sub>sc</sub></i> (approx.)</td>
+<td>3.579545 MHz</td>
+<td>4.433619 MHz</td>
+<td>4.433619 MHz
+</td></tr>
+<tr>
+<td>Master clock frequency 6<i>f<sub>sc</sub></i></td>
+<td>21.477272 MHz</td>
+<td>26.601712 MHz</td>
+<td>26.601712 MHz
+</td></tr>
+<tr>
+<td>Clock divisor <i>d</i></td>
+<td>12</td>
+<td>16</td>
+<td>15
+</td></tr>
+<tr>
+<td>CPU clock frequency 6<i>f<sub>sc</sub></i>/<i>d</i></td>
+<td>1.789773 MHz (~559 ns per cycle)</td>
+<td>1.662607 MHz (~601 ns per cycle)</td>
+<td>1.773448 MHz (~564 ns per cycle)
+</td></tr></tbody></table>
+<p>* The vast majority of PAL famiclones use a chipset or NOAC with this
+ timing. A small number use UMC UA6540+6541, which also PAL NES timing.<sup id="cite_ref-1" class="reference"><a href="#cite_note-1">[1]</a></sup>
+</p>
+<h3><span class="mw-headline" id="Notes">Notes</span></h3>
+<ul><li>All illegal 6502 opcodes execute identically on the 2A03/2A07.</li>
+<li>Every cycle on 6502 is either a read or a write cycle.</li>
+<li>A printer friendly version covering all section is available <a class="mw-selflink selflink">here</a>.</li>
+<li>Emulator authors may wish to emulate the NTSC NES/Famicom CPU at 
+21441960 Hz ((341×262-0.5)×4×60) to ensure a synchronised/stable 60 
+frames per second.<sup id="cite_ref-2" class="reference"><a href="#cite_note-2">[2]</a></sup></li></ul>
+<h3><span class="mw-headline" id="See_also">See also</span></h3>
+<ul><li><a rel="nofollow" class="external text" href="http://nesdev.org/2A03%20technical%20reference.txt">2A03 technical reference</a> by Brad Taylor. (Pretty old at this point; information on the wiki might be more up-to-date.)</li></ul>
+<h2><span class="mw-headline" id="References">References</span></h2>
+<h1><span class="mw-headline" id="Memory_map">Memory map</span></h1>
+<table class="tabular">
+<tbody><tr>
+<th>Address range</th>
+<th>Size</th>
+<th>Device
+</th></tr>
+<tr>
+<td>$0000-$07FF</td>
+<td>$0800</td>
+<td>2KB internal RAM
+</td></tr>
+<tr>
+<td>$0800-$0FFF</td>
+<td>$0800</td>
+<td rowspan="3"><a href="https://wiki.nesdev.org/w/index.php?title=Mirroring" title="Mirroring">Mirrors</a> of $0000-$07FF
+</td></tr>
+<tr>
+<td>$1000-$17FF</td>
+<td>$0800
+</td></tr>
+<tr>
+<td>$1800-$1FFF</td>
+<td>$0800
+</td></tr>
+<tr>
+<td>$2000-$2007</td>
+<td>$0008</td>
+<td><a href="https://wiki.nesdev.org/w/index.php?title=PPU_registers" title="PPU registers">NES PPU</a> registers
+</td></tr>
+<tr>
+<td>$2008-$3FFF</td>
+<td>$1FF8</td>
+<td>Mirrors of $2000-2007 (repeats every 8 bytes)
+</td></tr>
+<tr>
+<td>$4000-$4017</td>
+<td>$0018</td>
+<td><a href="https://wiki.nesdev.org/w/index.php?title=APU" title="APU">NES APU</a> and <a href="https://wiki.nesdev.org/w/index.php?title=2A03" title="2A03">I/O registers</a>
+</td></tr>
+<tr>
+<td>$4018-$401F</td>
+<td>$0008</td>
+<td>APU and I/O functionality that is normally disabled. See <a href="https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode" title="CPU Test Mode">CPU Test Mode</a>.
+</td></tr>
+<tr>
+<td>$4020-$FFFF</td>
+<td>$BFE0</td>
+<td>Cartridge space: PRG ROM, PRG RAM, and <a href="https://wiki.nesdev.org/w/index.php?title=Mapper" title="Mapper">mapper</a> registers (See Note)
+</td></tr></tbody></table>
+<p>Some parts of the 2 KiB of internal RAM at $0000-$07FF have predefined purposes dictated by the 6502 architecture.
+The zero page is $0000-$00FF, and the stack always uses some part of the $0100-$01FF page.
+Games may divide up the rest however the programmer deems useful.
+See <a href="https://wiki.nesdev.org/w/index.php?title=Sample_RAM_map" title="Sample RAM map">Sample RAM map</a> for an example allocation strategy for this RAM.
+</p><p>Note: Most common boards and iNES mappers address ROM and Save/Work RAM in this format:
+</p>
+<ul><li>$6000-$7FFF = Battery Backed Save or Work RAM</li>
+<li>$8000-$FFFF = Usual ROM, commonly with Mapper Registers (see <a href="https://wiki.nesdev.org/w/index.php?title=MMC1" title="MMC1">MMC1</a> and <a href="https://wiki.nesdev.org/w/index.php?title=UxROM" title="UxROM">UxROM</a> for example)</li></ul>
+<p>The CPU expects interrupt vectors in a fixed place at the end of the cartridge space:
+</p>
+<ul><li>$FFFA-$FFFB = NMI vector</li>
+<li>$FFFC-$FFFD = Reset vector</li>
+<li>$FFFE-$FFFF = IRQ/BRK vector</li></ul>
+<p>If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, 
+along with the rest of the bank containing them, e.g. $C000-$FFFF for a 
+16KiB banking mapper) or use some sort of reset detection, the vectors 
+need to be stored in all banks.
+</p>
+<h1><span class="mw-headline" id="Pin_out_and_signal_description">Pin out and signal description</span></h1>
+<h3><span class="mw-headline" id="Pin_out">Pin out</span></h3>
+<pre>        .--\/--.
+ AD1 &lt;- |01  40| -- +5V
+ AD2 &lt;- |02  39| -&gt; OUT0
+/RST -&gt; |03  38| -&gt; OUT1
+ A00 &lt;- |04  37| -&gt; OUT2
+ A01 &lt;- |05  36| -&gt; /OE1
+ A02 &lt;- |06  35| -&gt; /OE2
+ A03 &lt;- |07  34| -&gt; R/W
+ A04 &lt;- |08  33| &lt;- /NMI
+ A05 &lt;- |09  32| &lt;- /IRQ
+ A06 &lt;- |10  31| -&gt; M2
+ A07 &lt;- |11  30| &lt;- TST (usually GND)
+ A08 &lt;- |12  29| &lt;- CLK
+ A09 &lt;- |13  28| &lt;&gt; D0
+ A10 &lt;- |14  27| &lt;&gt; D1
+ A11 &lt;- |15  26| &lt;&gt; D2
+ A12 &lt;- |16  25| &lt;&gt; D3
+ A13 &lt;- |17  24| &lt;&gt; D4
+ A14 &lt;- |18  23| &lt;&gt; D5
+ A15 &lt;- |19  22| &lt;&gt; D6
+ GND -- |20  21| &lt;&gt; D7
+        `------'
+</pre>
+<h3><span class="mw-headline" id="Signal_description">Signal description</span></h3>
+<p>Active-Low signals are indicated by a "/". Every cycle is either a read or a write cycle.
+</p>
+<ul><li><b>CLK</b>&nbsp;: 21.47727 MHz (NTSC) or 26.6017 MHz (PAL) clock input. Internally, this clock is divided by 12 (NTSC <a href="https://wiki.nesdev.org/w/index.php?title=CPU" title="CPU">2A03</a>) or 16 (PAL <a href="https://wiki.nesdev.org/w/index.php?title=CPU" title="CPU">2A07</a>)
+ to feed the 6502's clock input φ0, which is in turn inverted to form 
+φ1, which is then inverted to form φ2. φ1 is high during the first phase
+ (half-cycle) of each CPU cycle, while φ2 is high during the second 
+phase.</li>
+<li><b>AD1</b>&nbsp;: Audio out pin (both pulse waves).</li>
+<li><b>AD2</b>&nbsp;: Audio out pin (triangle, noise, and DPCM).</li>
+<li><b>Axx</b> and <b>Dx</b>&nbsp;: Address and data bus, respectively. <b>Axx</b> holds the target address during the entire read/write cycle. For reads, the value is read from <b>Dx</b> during φ2. For writes, the value appears on <b>Dx</b> during φ2 (and no sooner).</li>
+<li><b>OUT0..OUT2</b>&nbsp;: Output pins used by the controllers ($4016 output latch bits 0-2). These 3 pins are connected to either the <a href="https://wiki.nesdev.org/w/index.php?title=NES_expansion_port_pinout" class="mw-redirect" title="NES expansion port pinout">NES</a> or <a href="https://wiki.nesdev.org/w/index.php?title=Famicom_expansion_port_pinout" class="mw-redirect" title="Famicom expansion port pinout">Famicom's</a> expansion port, and <b>OUT0</b> is additionally used as the "strobe" signal (OUT) on both <a href="https://wiki.nesdev.org/w/index.php?title=Controller_port_pinout" title="Controller port pinout">controller ports</a>.</li>
+<li><b>/OE1</b> and <b>/OE2</b>&nbsp;: Controller ports (for controller 
+#1 and #2 respectively). Each enable the output of their respective 
+controller, if present.</li>
+<li><b>R/W</b>&nbsp;: Read/write signal, which is used to indicate operations of the same names. Low is write. <b>R/W</b> stays high/low during the entire read/write cycle.</li>
+<li><b>/NMI</b>&nbsp;: Non-maskable interrupt pin. See the 6502 manual and <a href="https://wiki.nesdev.org/w/index.php?title=CPU_interrupts" title="CPU interrupts">CPU interrupts</a> for more details.</li>
+<li><b>/IRQ</b>&nbsp;: Interrupt pin. See the 6502 manual and <a href="https://wiki.nesdev.org/w/index.php?title=CPU_interrupts" title="CPU interrupts">CPU interrupts</a> for more details.</li>
+<li><b>M2</b>&nbsp;: Can be considered as a "signals ready" pin. It is a
+ modified version the 6502's φ2 (which roughly corresponds to the CPU 
+input clock φ0) that allows for slower ROMs. CPU cycles begin at the 
+point where <b>M2</b> goes low.
+<ul><li>In the NTSC 2A03E, G, and H, <b>M2</b> has a <a href="https://wiki.nesdev.org/w/index.php?title=Glossary" title="Glossary">duty cycle</a> of 15/24 (5/8), or 350ns/559ns. Equivalently, a CPU read (which happens during the second, high phase of <b>M2</b>) takes 1 and 7/8th PPU cycles. The internal φ2 duty cycle is exactly 1/2 (one half).</li>
+<li>In the PAL 2A07, <b>M2</b> has a duty cycle of 19/32, or 357ns/601ns, or 1.9 out of 3.2 pixels.</li>
+<li>In the original NTSC 2A03 (no letter), M2 has a duty cycle of 17/24, or 396ns/559ns, or 2 and 1/8th pixels.</li></ul></li>
+<li><b><a href="https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode" title="CPU Test Mode">TST</a></b>&nbsp;:
+ (tentative name) Pin 30 is special: normally it is grounded in the NES,
+ Famicom, PC10/VS. NES and other Nintendo Arcade Boards (Punch-Out!! and
+ Donkey Kong 3). But if it is pulled high on the RP2A03G, extra 
+diagnostic registers to test the sound hardware are enabled from $4018 
+through $401A, and the joystick ports $4016 and $4017 become open bus. 
+On older revisions of the CPU, pulling pin 30 high instead causes the 
+CPU to stop execution.</li>
+<li><b>/RST</b>&nbsp;: When low, holds CPU in reset state, during which 
+all CPU pins (except pin 2) are in high impedance state. When released, 
+CPU starts executing code (read $FFFC, read $FFFD, ...) after 6 M2 
+clocks.</li></ul>
+<h1><span class="mw-headline" id="Power_up_state">Power up state</span></h1>
+<p>The following results are from a US (NTSC) NES, original 
+front-loading design, RP2A03G CPU chip, NES-CPU-07 main board revision, 
+manufactured in 1988. The memory values are probably slightly different 
+for each individual NES console. Please note that you should NOT rely on
+ the state of any registers after Power-UP and especially not the stack 
+register and RAM ($0000-$07FF).
+</p>
+<h2><span class="mw-headline" id="At_power-up">At power-up</span></h2>
+<dl><dd>P = $34<sup id="cite_ref-3" class="reference"><a href="#cite_note-3">[3]</a></sup> (IRQ disabled)<sup id="cite_ref-4" class="reference"><a href="#cite_note-4">[4]</a></sup></dd>
+<dd>A, X, Y = 0</dd>
+<dd>S = $FD<sup id="cite_ref-reset-stack-push_5-0" class="reference"><a href="#cite_note-reset-stack-push-5">[5]</a></sup></dd>
+<dd>$4017 = $00 (frame irq enabled)</dd>
+<dd>$4015 = $00 (all channels disabled)</dd>
+<dd>$4000-$400F = $00</dd>
+<dd>$4010-$4013 = $00 <sup id="cite_ref-6" class="reference"><a href="#cite_note-6">[6]</a></sup></dd>
+<dd>All 15 bits of noise channel LFSR = $0000<sup id="cite_ref-7" class="reference"><a href="#cite_note-7">[7]</a></sup>. The first time the LFSR is clocked from the all-0s state, it will shift in a 1.</dd>
+<dd>2A03G: <a href="https://wiki.nesdev.org/w/index.php?title=APU_Frame_Counter" title="APU Frame Counter">APU Frame Counter</a> reset. (but 2A03letterless: APU frame counter powers up at a value equivalent to 15)</dd></dl>
+<dl><dd>Internal memory ($0000-$07FF) has unreliable startup state. Some
+ machines may have consistent RAM contents at power-on, but others do 
+not.
+<ul><li>Emulators often implement a consistent RAM startup state (e.g. 
+all $00 or $FF, or a particular pattern), and flash carts like the <a href="https://wiki.nesdev.org/w/index.php?title=PowerPak" title="PowerPak">PowerPak</a>
+ may partially or fully initialize RAM before starting a program, so an 
+NES programmer must be careful not to rely on the startup contents of 
+RAM.</li></ul></dd></dl>
+<h2><span class="mw-headline" id="After_reset">After reset</span></h2>
+<dl><dd>A, X, Y were not affected</dd>
+<dd>S was decremented by 3 (but nothing was written to the stack)<sup id="cite_ref-reset-stack-push_5-1" class="reference"><a href="#cite_note-reset-stack-push-5">[5]</a></sup></dd>
+<dd>The I (IRQ disable) flag was set to true (status ORed with $04)</dd>
+<dd>The internal memory was unchanged</dd>
+<dd>APU mode in $4017 was unchanged</dd>
+<dd>APU was silenced ($4015 = 0)</dd>
+<dd>APU triangle phase is reset to 0 (i.e. outputs a value of 15, the first step of its waveform)</dd>
+<dd>APU DPCM output ANDed with 1 (upper 6 bits cleared)</dd>
+<dd>2A03G: <a href="https://wiki.nesdev.org/w/index.php?title=APU_Frame_Counter" title="APU Frame Counter">APU Frame Counter</a> reset. (but 2A03letterless: APU frame counter retains old value) <sup id="cite_ref-8" class="reference"><a href="#cite_note-8">[8]</a></sup></dd></dl>
+<h2><span class="mw-headline" id="See_also_2">See also</span></h2>
+<ul><li><a href="https://wiki.nesdev.org/w/index.php?title=PPU_power_up_state" title="PPU power up state">PPU power up state</a></li></ul>
+<h2><span class="mw-headline" id="Notes_2">Notes</span></h2>
+<h1><span class="mw-headline" id="Status_flag_behavior">Status flag behavior</span></h1>
+<p>The <b>flags</b> register, also called <b>processor status</b> or just <b>P</b>, is one of the six architectural registers on the 6502 family CPU.
+It is composed of six one-bit registers; instructions modify one or more bits and leave others unchanged.
+</p><p>Instructions that save or restore the flags map them to bits in the architectural 'P' register as follows:
+</p>
+<pre>7  bit  0
+---- ----
+NVss DIZC
+|||| ||||
+|||| |||+- <a href="#C:_Carry">Carry</a>
+|||| ||+-- <a href="#Z:_Zero">Zero</a>
+|||| |+--- <a href="#I:_Interrupt_Disable">Interrupt Disable</a>
+|||| +---- <a href="#D:_Decimal">Decimal</a>
+||++------ No CPU effect, see: <a href="#The_B_flag">the B flag</a>
+|+-------- <a href="#V:_Overflow">Overflow</a>
++--------- <a href="#N:_Negative">Negative</a>
+</pre>
+<ul><li>The PHP (Push Processor Status) and PLP (Pull Processor Status) 
+instructions can be used to retrieve or set this register directly via 
+the stack.</li>
+<li><a href="https://wiki.nesdev.org/w/index.php?title=Interrupts" class="mw-redirect" title="Interrupts">Interrupts</a>, including the NMI and also the pseudo-interrupt BRK instruction, implicitly push the status register to the stack.</li>
+<li>Interrupts returning with RTI will implicitly pull the saved status register from the stack.</li></ul>
+<h2><span class="mw-headline" id="C:_Carry">C: Carry</span></h2>
+<ul><li>After ADC, this is the carry result of the addition.</li>
+<li>After SBC or CMP, this flag will be set if no borrow was the result, or alternatively a "greater than or equal" result.</li>
+<li>After a shift instruction (ASL, LSR, ROL, ROR), this contains the bit that was shifted out.</li>
+<li>Increment and decrement instructions do not affect the carry flag.</li>
+<li>Can be set or cleared directly with SEC, CLC.</li></ul>
+<h2><span class="mw-headline" id="Z:_Zero">Z: Zero</span></h2>
+<ul><li>After most instructions that have a value result, if that value is zero, this flag will be set.</li></ul>
+<h2><span class="mw-headline" id="I:_Interrupt_Disable">I: Interrupt Disable</span></h2>
+<ul><li>When set, all <a href="https://wiki.nesdev.org/w/index.php?title=Interrupts" class="mw-redirect" title="Interrupts">interrupts</a> except the <a href="https://wiki.nesdev.org/w/index.php?title=NMI" title="NMI">NMI</a> are inhibited.</li>
+<li>Can be set or cleared directly with SEI, CLI.</li>
+<li>Automatically set by the CPU when an IRQ is triggered, and restored to its previous state by RTI.</li>
+<li>If the <a href="https://wiki.nesdev.org/w/index.php?title=IRQ" title="IRQ">/IRQ</a> line is low (IRQ pending) when this flag is cleared, an interrupt will immediately be triggered.</li></ul>
+<h2><span class="mw-headline" id="D:_Decimal">D: Decimal</span></h2>
+<ul><li>On the NES, this flag has no effect.</li>
+<li>On the original 6502, this flag causes some arithmetic instructions to use <a href="https://en.wikipedia.org/wiki/Binary-coded_decimal" class="extiw" title="wikipedia:Binary-coded decimal">binary-coded decimal</a> representation to make base 10 calculations easier.</li>
+<li>Can be set or cleared directly with SED, CLD.</li></ul>
+<h2><span class="mw-headline" id="V:_Overflow">V: Overflow</span></h2>
+<ul><li>ADC and SBC will set this flag if the signed result would be invalid<sup id="cite_ref-9" class="reference"><a href="#cite_note-9">[9]</a></sup>, necessary for making signed comparisons<sup id="cite_ref-10" class="reference"><a href="#cite_note-10">[10]</a></sup>.</li>
+<li>BIT will load bit 6 of the addressed value directly into the V flag.</li>
+<li>Can be cleared directly with CLV. There is no corresponding set instruction.</li></ul>
+<h2><span class="mw-headline" id="N:_Negative">N: Negative</span></h2>
+<ul><li>After most instructions that have a value result, this flag will contain bit 7 of that result.</li>
+<li>BIT will load bit 7 of the addressed value directly into the N flag.</li></ul>
+<h2><span class="mw-headline" id="The_B_flag">The B flag</span></h2>
+<p>While there are only six flags in the processor status register 
+within the CPU, when transferred to the stack, there are two additional 
+bits. These do not represent a register that can hold a value but can be
+ used to distinguish how the flags were pushed.
+</p><p>Some 6502 references call this the "B flag", though it does not represent an actual CPU register.
+</p><p>Two interrupts (/<a href="https://wiki.nesdev.org/w/index.php?title=IRQ" title="IRQ">IRQ</a> and /<a href="https://wiki.nesdev.org/w/index.php?title=NMI" title="NMI">NMI</a>)
+ and two instructions (PHP and BRK) push the flags to the stack. In the 
+byte pushed, bit 5 is always set to 1, and bit 4 is 1 if from an 
+instruction (PHP or BRK) or 0 if from an interrupt line being pulled low
+ (/IRQ or /NMI).  This is the only time and place where the B flag 
+actually exists: not in the status register itself, but in bit 4 of the 
+copy that is written to the stack.
+</p>
+<table class="tabular">
+
+<tbody><tr>
+<th>Instruction</th>
+<th>Bits 5 and 4</th>
+<th>Side effects after pushing
+</th></tr>
+<tr>
+<td>PHP</td>
+<td>11</td>
+<td>None
+</td></tr>
+<tr>
+<td>BRK</td>
+<td>11</td>
+<td>I is set to 1
+</td></tr>
+<tr>
+<td>/<a href="https://wiki.nesdev.org/w/index.php?title=IRQ" title="IRQ">IRQ</a></td>
+<td>10</td>
+<td>I is set to 1
+</td></tr>
+<tr>
+<td>/<a href="https://wiki.nesdev.org/w/index.php?title=NMI" title="NMI">NMI</a></td>
+<td>10</td>
+<td>I is set to 1
+</td></tr></tbody></table>
+<p>Two instructions (PLP and RTI) pull a byte from the stack and set all the flags. They ignore bits 5 and 4.
+</p><p>The only way for an IRQ handler to distinguish /IRQ from BRK is 
+to read the flags byte from the stack and test bit 4. The slowness of 
+this is one reason why BRK wasn't used as a syscall mechanism. Instead, 
+it was more often used to trigger a patching mechanism that hung off the
+ /IRQ vector: a single byte in PROM, UVEPROM, flash, etc. would be 
+forced to 0, and the IRQ handler would pick something to do instead 
+based on the program counter.
+</p><p>Unlike bits 5 and 4, bit 3 actually exists in P, even though it 
+doesn't affect the ALU operation on the 2A03 or 2A07 CPU the way it does
+ in MOS Technology's own chips.
+</p>
+<h2><span class="mw-headline" id="External_links">External links</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="http://forums.nesdev.org/viewtopic.php?p=64224#p64224">koitsu's explanation</a></li></ul>
+<h3><span class="mw-headline" id="References_2">References</span></h3>
+<div class="mw-references-wrap"><ol class="references">
+<li id="cite_note-1"><span class="mw-cite-backlink"><a href="#cite_ref-1" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="https://forums.nesdev.org/viewtopic.php?f=3&amp;t=17213#p216082">nesdev forum: Eugene.S provides a list of famiclones</a></span>
+</li>
+<li id="cite_note-2"><span class="mw-cite-backlink"><a href="#cite_ref-2" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="http://forums.nesdev.org/viewtopic.php?p=223679#p223679">nesdev forum: Mesen - NES Emulator</a></span>
+</li>
+<li id="cite_note-3"><span class="mw-cite-backlink"><a href="#cite_ref-3" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text">The <a href="https://wiki.nesdev.org/w/index.php?title=Emulator_tests" title="Emulator tests">golden log of nestest</a> differs from this in the <a href="https://wiki.nesdev.org/w/index.php?title=CPU_status_flag_behavior" class="mw-redirect" title="CPU status flag behavior">irrelevant bits 5 and 4 of P</a></span>
+</li>
+<li id="cite_note-4"><span class="mw-cite-backlink"><a href="#cite_ref-4" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text">IRQ was first asserted about 1/60 second after power-up, by APU.</span>
+</li>
+<li id="cite_note-reset-stack-push-5"><span class="mw-cite-backlink">↑ <sup><a href="#cite_ref-reset-stack-push_5-0"><span class="cite-accessibility-label">Jump up to: </span>5.0</a></sup> <sup><a href="#cite_ref-reset-stack-push_5-1">5.1</a></sup></span> <span class="reference-text">RESET uses the logic shared with NMI, IRQ, and BRK that would push PC and P. However, like <a rel="nofollow" class="external text" href="http://visual6502.org/wiki/index.php?title=6502_BRK_and_B_bit#masking_of_the_stack_writes_during_RESET">some but not all 6502s</a>, the 2A03 prohibits writes during reset. <a rel="nofollow" class="external text" href="https://forums.nesdev.org/viewtopic.php?p=184247#p184247">This test</a> relies on open bus being precharged by these reads. See <a rel="nofollow" class="external text" href="https://www.youtube.com/watch?v=fWqBmmPQP40&amp;t=41m45s">27c3: Reverse Engineering the MOS 6502 CPU (en)</a> from 41:45 onward for details</span>
+</li>
+<li id="cite_note-6"><span class="mw-cite-backlink"><a href="#cite_ref-6" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="https://forums.nesdev.org/viewtopic.php?t=18278">Eliminator Boat Duel</a></span>
+</li>
+<li id="cite_note-7"><span class="mw-cite-backlink"><a href="#cite_ref-7" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="https://forums.nesdev.org/viewtopic.php?p=172797#p172797">Noise channel init log</a></span>
+</li>
+<li id="cite_note-8"><span class="mw-cite-backlink"><a href="#cite_ref-8" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="https://forums.nesdev.org/viewtopic.php?p=214939#p214939">2A03letterless is missing transistor to set frame counter LFSR on reset</a></span>
+</li>
+<li id="cite_note-9"><span class="mw-cite-backlink"><a href="#cite_ref-9" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="http://www.6502.org/tutorials/vflag.html">Article: The Overflow (V) Flag Explained</a></span>
+</li>
+<li id="cite_note-10"><span class="mw-cite-backlink"><a href="#cite_ref-10" aria-label="Jump up" title="Jump up">↑</a></span> <span class="reference-text"><a rel="nofollow" class="external text" href="http://www.6502.org/tutorials/compare_beyond.html#5">Article: Beyond 8-bit Unsigned Comparisons</a>, Signed Comparisons</span>
+</li>
+</ol></div>
+<h1><span class="mw-headline" id="References_3">References</span></h1>
+
+<!-- 
+NewPP limit report
+Cached time: 20220104232829
+Cache expiry: 86400
+Dynamic content: false
+Complications: []
+CPU time usage: 0.123 seconds
+Real time usage: 0.145 seconds
+Preprocessor visited node count: 168/1000000
+Post‐expand include size: 14925/2097152 bytes
+Template argument size: 8/2097152 bytes
+Highest expansion depth: 4/40
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 4318/5000000 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%   69.786      1 -total
+ 44.48%   31.044      1 CPU
+ 26.35%   18.386      1 CPU_status_flag_behavior
+ 15.51%   10.823      1 CPU_power_up_state
+ 11.58%    8.083      4 Template:Sub
+  6.84%    4.774      1 CPU_memory_map
+  5.67%    3.956      1 CPU_pin_out_and_signal_description
+-->
+
+<!-- Saved in parser cache with key nesdev_db-wiki_:pcache:idhash:124-0!canonical and timestamp 20220104232829 and revision id 1250. Serialized with JSON.
+ -->
+</div></div><div class="printfooter">
+Retrieved from "<a dir="ltr" href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;oldid=1250">https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;oldid=1250</a>"</div>
+<div id="catlinks" class="catlinks" data-mw="interface"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="https://wiki.nesdev.org/w/index.php?title=Special:Categories" title="Special:Categories">Category</a>: <ul><li><a href="https://wiki.nesdev.org/w/index.php?title=Category:Pinouts" title="Category:Pinouts">Pinouts</a></li></ul></div></div><!-- end content --><div class="visualClear"></div></div></div><div class="visualClear"></div></div><div id="column-one" dir="ltr" lang="en"><h2>Navigation menu</h2><div role="navigation" class="portlet" id="p-cactions" aria-labelledby="p-cactions-label"><h3 id="p-cactions-label" dir="ltr" lang="en">Page actions</h3><div class="pBody"><ul dir="ltr" lang="en"><li id="ca-nstab-main" class="selected"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL" title="View the content page [Alt+Shift+c]" accesskey="c">Page</a></li><li id="ca-talk"><a href="https://wiki.nesdev.org/w/index.php?title=Talk:CPU_ALL" rel="discussion" title="Discussion about the content page [Alt+Shift+t]" accesskey="t">Discussion</a></li><li id="ca-viewsource"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;action=edit" title="This page is protected.
+You can view its source [Alt+Shift+e]" accesskey="e">View source</a></li><li id="ca-history"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;action=history" title="Past revisions of this page [Alt+Shift+h]" accesskey="h">History</a></li></ul></div></div><div role="navigation" class="portlet" id="p-cactions-mobile" aria-labelledby="p-cactions-mobile-label"><h3 id="p-cactions-mobile-label" dir="ltr" lang="en">Page actions</h3><div class="pBody"><ul dir="ltr" lang="en"><li id="ca-nstab-main-mobile" class="selected"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL" title="Page">Page</a></li><li id="ca-talk-mobile"><a href="https://wiki.nesdev.org/w/index.php?title=Talk:CPU_ALL" rel="discussion" title="Discussion">Discussion</a></li><li id="ca-more"><a href="#p-cactions">More</a></li><li id="ca-tools"><a href="#p-tb" title="Tools">Tools</a></li><li id="ca-languages"><a href="#p-lang" title="In other languages">In other languages</a></li></ul></div></div><div role="navigation" class="portlet" id="p-personal" aria-labelledby="p-personal-label"><h3 id="p-personal-label" dir="ltr" lang="en">Personal tools</h3><div class="pBody"><ul dir="ltr" lang="en"><li id="pt-login"><a href="https://wiki.nesdev.org/w/index.php?title=Special:UserLogin&amp;returnto=CPU+ALL" title="You are encouraged to log in; however, it is not mandatory [Alt+Shift+o]" accesskey="o">Log in</a></li></ul></div></div><div class="portlet" id="p-logo" role="banner"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev_Wiki" class="mw-wiki-logo" title="Visit the main page"></a></div><div id="sidebar"><div role="navigation" class="portlet generated-sidebar" id="p-navigation" aria-labelledby="p-navigation-label"><h3 id="p-navigation-label" dir="ltr" lang="en">Navigation</h3><div class="pBody"><ul dir="ltr" lang="en"><li id="n-Nesdev-main-page"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev">Nesdev main page</a></li><li id="n-Wiki-main-page"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev_Wiki">Wiki main page</a></li><li id="n-NES-reference-guide"><a href="https://wiki.nesdev.org/w/index.php?title=NES_reference_guide">NES reference guide</a></li><li id="n-Programming-guide"><a href="https://wiki.nesdev.org/w/index.php?title=Programming_guide">Programming guide</a></li><li id="n-Projects"><a href="https://wiki.nesdev.org/w/index.php?title=Projects">Projects</a></li><li id="n-Offline-HTML-version"><a href="http://wiki.nesdev.org/w/nesdevwiki_2016-08-28.zip" rel="nofollow">Offline HTML version</a></li><li id="n-NESdev-BBS"><a href="http://forums.nesdev.org/" rel="nofollow">NESdev BBS</a></li><li id="n-.23NESdev"><a href="https://wiki.nesdev.org/w/index.php?title=NESdev_IRC_channel">#NESdev</a></li><li id="n-recentchanges"><a href="https://wiki.nesdev.org/w/index.php?title=Special:RecentChanges" title="A list of recent changes in the wiki [Alt+Shift+r]" accesskey="r">Recent changes</a></li></ul></div></div><div role="search" class="portlet" id="p-search"><h3 id="p-search-label" dir="ltr" lang="en"><label for="searchInput">Search</label></h3><div class="pBody" id="searchBody"><form action="/w/index.php" id="searchform"><input type="hidden" value="Special:Search" name="title"><input type="search" name="search" placeholder="Search Nesdev wiki" autocapitalize="sentences" title="Search Nesdev wiki [Alt+Shift+f]" accesskey="f" id="searchInput"><input type="submit" name="go" value="Go" title="Go to a page with this exact name if it exists" id="searchButton" class="searchButton">&nbsp; <input type="submit" name="fulltext" value="Search" title="Search the pages for this text" id="mw-searchButton" class="searchButton"></form></div></div><div role="navigation" class="portlet" id="p-tb" aria-labelledby="p-tb-label"><h3 id="p-tb-label" dir="ltr" lang="en">Tools</h3><div class="pBody"><ul dir="ltr" lang="en"><li id="t-whatlinkshere"><a href="https://wiki.nesdev.org/w/index.php?title=Special:WhatLinksHere/CPU_ALL" title="A list of all wiki pages that link here [Alt+Shift+j]" accesskey="j">What links here</a></li><li id="t-recentchangeslinked"><a href="https://wiki.nesdev.org/w/index.php?title=Special:RecentChangesLinked/CPU_ALL" rel="nofollow" title="Recent changes in pages linked from this page [Alt+Shift+k]" accesskey="k">Related changes</a></li><li id="t-specialpages"><a href="https://wiki.nesdev.org/w/index.php?title=Special:SpecialPages" title="A list of all special pages [Alt+Shift+q]" accesskey="q">Special pages</a></li><li id="t-print"><a href="javascript:print();" rel="alternate" title="Printable version of this page [Alt+Shift+p]" accesskey="p">Printable version</a></li><li id="t-permalink"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;oldid=1250" title="Permanent link to this revision of the page">Permanent link</a></li><li id="t-info"><a href="https://wiki.nesdev.org/w/index.php?title=CPU_ALL&amp;action=info" title="More information about this page">Page information</a></li></ul></div></div></div><a href="#sidebar" title="navigation" class="menu-toggle" id="sidebar-toggle"></a><a href="#p-personal" title="user tools" class="menu-toggle" id="p-personal-toggle"></a><a href="#globalWrapper" title="back to top" class="menu-toggle" id="globalWrapper-toggle"></a></div><!-- end of the left (by default at least) column --><div class="visualClear"></div><div id="footer" class="mw-footer" role="contentinfo" dir="ltr" lang="en"><div id="f-copyrightico" class="footer-icons"></div><div id="f-poweredbyico" class="footer-icons"><a href="https://www.mediawiki.org/"><img src="CPU%20ALL%20-%20Nesdev%20wiki_files/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" srcset="CPU%20ALL%20-%20Nesdev%20wiki_files/poweredby_mediawiki_132x47.png 1.5x, CPU%20ALL%20-%20Nesdev%20wiki_files/poweredby_mediawiki_176x62.png 2x" loading="lazy" width="88" height="31"></a></div><ul id="f-list"><li id="lastmod"> This page was last edited on 18 August 2015, at 18:57.</li><li id="privacy"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev_wiki:Privacy_policy" title="Nesdev wiki:Privacy policy">Privacy policy</a></li><li id="about"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev_wiki:About" title="Nesdev wiki:About">About Nesdev wiki</a></li><li id="disclaimer"><a href="https://wiki.nesdev.org/w/index.php?title=Nesdev_wiki:General_disclaimer" title="Nesdev wiki:General disclaimer">Disclaimers</a></li></ul></div></div>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.config.set({"wgPageParseReport":{"limitreport":{"cputime":"0.123","walltime":"0.145","ppvisitednodes":{"value":168,"limit":1000000},"postexpandincludesize":{"value":14925,"limit":2097152},"templateargumentsize":{"value":8,"limit":2097152},"expansiondepth":{"value":4,"limit":40},"expensivefunctioncount":{"value":0,"limit":100},"unstrip-depth":{"value":0,"limit":20},"unstrip-size":{"value":4318,"limit":5000000},"timingprofile":["100.00%   69.786      1 -total"," 44.48%   31.044      1 CPU"," 26.35%   18.386      1 CPU_status_flag_behavior"," 15.51%   10.823      1 CPU_power_up_state"," 11.58%    8.083      4 Template:Sub","  6.84%    4.774      1 CPU_memory_map","  5.67%    3.956      1 CPU_pin_out_and_signal_description"]},"cachereport":{"timestamp":"20220104232829","ttl":86400,"transientcontent":false}}});mw.config.set({"wgBackendResponseTime":489});});</script></body></html>
