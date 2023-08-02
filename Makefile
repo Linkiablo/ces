@@ -1,7 +1,7 @@
 
 CC := gcc
 
-CFLAGS := -Wall -Wextra -Wpedantic
+CFLAGS := -Wall -Wextra -Wpedantic -ggdb
 LIBS := 
 
 OBJS := main.o cpu.o

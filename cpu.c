@@ -1,18 +1,16 @@
 #include "cpu.h"
 #include <assert.h>
 
-#define FLAG_N 128 // 0b10000000
-#define FLAG_V 64  // 0b01000000
-#define FLAG_B 16  // 0b00010000
-#define FLAG_I 4   // 0b00000100
-#define FLAG_Z 2   // 0b00000010
-#define FLAG_C 1   // 0b00000001
-
 #define READ_8(cpu) (_read_8(cpu))
 #define READ_16(cpu) (READ_8(cpu) & (READ_8(cpu) << 8))
 
 #define LOAD_8(addr) (*((uint8_t *)addr))
 #define LOAD_16(addr) (LOAD_8(addr) & (LOAD_8(addr + 1) << 8))
+
+#define SET_FLAG(cpu, flag, cond)                                              \
+    (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
+
+#define INSTRUCTION(i, m) ((instruction_t){.inst = i, .mode = m})
 
 /* private method because of possible undefined order of operations */
 uint8_t _read_8(cpu_t *cpu) {
@@ -23,6 +21,7 @@ uint8_t _read_8(cpu_t *cpu) {
 void init_cpu(cpu_t *cpu, size_t mem_size) {
     memset(cpu, 0, sizeof(cpu_t));
 
+    // TODO: min size?
     /* PC 16 bit wide */
     assert(mem_size <= UINT16_MAX);
     cpu->mem_size = mem_size;
@@ -32,11 +31,15 @@ void init_cpu(cpu_t *cpu, size_t mem_size) {
         fprintf(stderr, "ERROR: could not allocate %ld bytes for cpu memory!",
                 mem_size);
     }
+
+    // TODO: stack pointer init
 }
 
 void destroy_cpu(cpu_t *cpu) { free(cpu->mem); }
 
-int start(cpu_t *cpu) { return 0; }
+void load_program(cpu_t *cpu, uint8_t *program, size_t program_size) {
+    memcpy(cpu->mem, program, program_size);
+}
 
 enum address_mode {
     ACCUMULATOR,
@@ -58,9 +61,9 @@ void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
     case ACCUMULATOR:
         return &(cpu->a);
     case IMMEDIATE:
-	// increment PC
-	READ_8(cpu);
-	// return new address
+        // increment PC
+        READ_8(cpu);
+        // return new address
         return cpu->mem + cpu->pc;
     case ABSOLUTE:
         return cpu->mem + READ_16(cpu);
@@ -89,6 +92,16 @@ void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
     }
 }
 
+typedef void (*instruction_fn)(cpu_t *cpu, enum address_mode mode);
+
+typedef struct instruction_t {
+    instruction_fn inst;
+    enum address_mode mode;
+} instruction_t;
+
+// TODO: richtig machen
+instruction_t INSTRUCTION_LOOKUP[0xFF];
+
 // ADC
 //
 //     Add Memory to Accumulator with Carry
@@ -106,19 +119,23 @@ void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
 //     (indirect,X)	ADC (oper,X)	61	2	6
 //     (indirect),Y	ADC (oper),Y	71	2	5*
 void adc(cpu_t *cpu, enum address_mode mode) {
-    uint8_t *oper = (uint8_t *)get_oper_ptr(cpu, mode);
+    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode);
     // carry works, because carry flag is the first bit
-    int16_t res = *oper + cpu->a + (cpu->p | FLAG_C);
-
-    // clear c flag
-    cpu->p ^= cpu->p & 1;
+    int16_t res = *oper + cpu->a + (cpu->p & FLAG_C);
 
     // n flag
-    cpu->p |= (res < 0) << 7;
+    SET_FLAG(cpu, FLAG_N, res < 0);
     // z flag
-    cpu->p |= (res == 0) << 1;
+    SET_FLAG(cpu, FLAG_Z, res == 0);
     // c flag
-    cpu->p |= ((res & 0xFF00) != 0);
+    SET_FLAG(cpu, FLAG_C, (res & 0xFF00) != 0);
+    // v flag:
+    // https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+    // M = *oper, N = cpu->a
+    // cpu->p |= ((*oper) ^ res) & ((cpu->a) ^ res) & 0x80;
+    SET_FLAG(cpu, FLAG_V, (((*oper) ^ res) & ((cpu->a) ^ res) & 0x80) != 0);
+
+    cpu->a = res & 0xFF;
 }
 
 // AND
@@ -730,3 +747,13 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TYA	98	1	82
+
+int execute(cpu_t *cpu) {
+    // INSTRUCTION_LOOKUP[0x69] = INSTRUCTION(adc, IMMEDIATE);
+
+    // instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
+    instruction_t i = INSTRUCTION(adc, IMMEDIATE);
+    i.inst(cpu, i.mode);
+
+    return 0;
+}
