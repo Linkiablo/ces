@@ -53,6 +53,7 @@ enum address_mode {
     INDIRECT,
     PRE_INDIRECT,
     POST_INDIRECT,
+    IMPLIED
     // TODO: RELATIVE?
 };
 
@@ -100,7 +101,11 @@ typedef struct instruction_t {
 } instruction_t;
 
 // TODO: richtig machen
-static const instruction_t INSTRUCTION_LOOKUP[0xFF];
+static const instruction_t INSTRUCTION_LOOKUP[0xFF] = {
+	INSTRUCTION(brk, IMPLIED);
+};
+
+void nop(cpu_t *cpu, enum address_mode mode);
 
 // ADC
 //
@@ -151,6 +156,7 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	AND oper,Y	39	3	4*
 //     (indirect,X)	AND (oper,X)	21	2	6
 //     (indirect),Y	AND (oper),Y	31	2	5*
+void and(cpu_t *cpu, enum address_mode mode);
 
 // ASL
 //
@@ -165,6 +171,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	ASL oper,X	16	2	6
 //     absolute	ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
+void asl(cpu_t *cpu, enum address_mode mode);
+
 // BCC
 //
 //     Branch on Carry Clear
@@ -174,6 +182,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCC oper	90	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BCS
 //
 //     Branch on Carry Set
@@ -183,6 +193,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCS oper	B0	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BEQ
 //
 //     Branch on Result Zero
@@ -192,6 +204,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BEQ oper	F0	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BIT
 //
 //     Test Bits in Memory with Accumulator
@@ -205,6 +219,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     addressing	assembler	opc	bytes	cycles
 //     zeropage	BIT oper	24	2	3
 //     absolute	BIT oper	2C	3	4
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BMI
 //
 //     Branch on Result Minus
@@ -214,6 +230,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BMI oper	30	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BNE
 //
 //     Branch on Result not Zero
@@ -223,6 +241,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BNE oper	D0	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BPL
 //
 //     Branch on Result Plus
@@ -232,6 +252,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BPL oper	10	2	2**
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BRK
 //
 //     Force Break
@@ -251,6 +273,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	BRK	00	1	7
+void bcc(cpu_t *cpu, enum address_mode mode);
+
 // BVC
 //
 //     Branch on Overflow Clear
@@ -260,6 +284,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVC oper	50	2	2**
+void bvc(cpu_t *cpu, enum address_mode mode);
+
 // BVS
 //
 //     Branch on Overflow Set
@@ -269,6 +295,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVS oper	70	2	2**
+void bvs(cpu_t *cpu, enum address_mode mode);
+
 // CLC
 //
 //     Clear Carry Flag
@@ -278,6 +306,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	0	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLC	18	1	2
+void clc(cpu_t *cpu, enum address_mode mode);
+
 // CLD
 //
 //     Clear Decimal Mode
@@ -287,6 +317,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	0	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLD	D8	1	2
+void cld(cpu_t *cpu, enum address_mode mode);
+
 // CLI
 //
 //     Clear Interrupt Disable Bit
@@ -296,6 +328,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	0	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLI	58	1	2
+void cli(cpu_t *cpu, enum address_mode mode);
+
 // CLV
 //
 //     Clear Overflow Flag
@@ -305,6 +339,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	0
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLV	B8	1	2
+void clv(cpu_t *cpu, enum address_mode mode);
+
 // CMP
 //
 //     Compare Memory with Accumulator
@@ -321,6 +357,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	CMP oper,Y	D9	3	4*
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
+void cmp(cpu_t *cpu, enum address_mode mode);
+
 // CPX
 //
 //     Compare Memory and Index X
@@ -332,6 +370,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     immediate	CPX #oper	E0	2	2
 //     zeropage	CPX oper	E4	2	3
 //     absolute	CPX oper	EC	3	4
+void cpx(cpu_t *cpu, enum address_mode mode);
+
 // CPY
 //
 //     Compare Memory and Index Y
@@ -343,6 +383,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     immediate	CPY #oper	C0	2	2
 //     zeropage	CPY oper	C4	2	3
 //     absolute	CPY oper	CC	3	4
+void cpy(cpu_t *cpu, enum address_mode mode);
+
 // DEC
 //
 //     Decrement Memory by One
@@ -355,6 +397,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	DEC oper,X	D6	2	6
 //     absolute	DEC oper	CE	3	6
 //     absolute,X	DEC oper,X	DE	3	7
+void dec(cpu_t *cpu, enum address_mode mode);
+
 // DEX
 //
 //     Decrement Index X by One
@@ -364,6 +408,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEX	CA	1	2
+void dex(cpu_t *cpu, enum address_mode mode);
+
 // DEY
 //
 //     Decrement Index Y by One
@@ -373,6 +419,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEY	88	1	2
+void dey(cpu_t *cpu, enum address_mode mode);
+
 // EOR
 //
 //     Exclusive-OR Memory with Accumulator
@@ -389,6 +437,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	EOR oper,Y	59	3	4*
 //     (indirect,X)	EOR (oper,X)	41	2	6
 //     (indirect),Y	EOR (oper),Y	51	2	5*
+void eor(cpu_t *cpu, enum address_mode mode);
+
 // INC
 //
 //     Increment Memory by One
@@ -401,6 +451,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	INC oper,X	F6	2	6
 //     absolute	INC oper	EE	3	6
 //     absolute,X	INC oper,X	FE	3	7
+void inc(cpu_t *cpu, enum address_mode mode);
+
 // INX
 //
 //     Increment Index X by One
@@ -410,6 +462,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INX	E8	1	2
+void inx(cpu_t *cpu, enum address_mode mode);
+
 // INY
 //
 //     Increment Index Y by One
@@ -419,6 +473,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INY	C8	1	2
+void iny(cpu_t *cpu, enum address_mode mode);
+
 // JMP
 //
 //     Jump to New Location
@@ -430,6 +486,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JMP oper	4C	3	3
 //     indirect	JMP (oper)	6C	3	5
+void jmp(cpu_t *cpu, enum address_mode mode);
+
 // JSR
 //
 //     Jump to New Location Saving Return Address
@@ -441,6 +499,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JSR oper	20	3	6
+void jsr(cpu_t *cpu, enum address_mode mode);
+
 // LDA
 //
 //     Load Accumulator with Memory
@@ -457,6 +517,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	LDA oper,Y	B9	3	4*
 //     (indirect,X)	LDA (oper,X)	A1	2	6
 //     (indirect),Y	LDA (oper),Y	B1	2	5*
+void lda(cpu_t *cpu, enum address_mode mode);
+
 // LDX
 //
 //     Load Index X with Memory
@@ -470,6 +532,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,Y	LDX oper,Y	B6	2	4
 //     absolute	LDX oper	AE	3	4
 //     absolute,Y	LDX oper,Y	BE	3	4*
+void ldx(cpu_t *cpu, enum address_mode mode);
+
 // LDY
 //
 //     Load Index Y with Memory
@@ -483,6 +547,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	LDY oper,X	B4	2	4
 //     absolute	LDY oper	AC	3	4
 //     absolute,X	LDY oper,X	BC	3	4*
+void ldy(cpu_t *cpu, enum address_mode mode);
+
 // LSR
 //
 //     Shift One Bit Right (Memory or Accumulator)
@@ -496,6 +562,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	LSR oper,X	56	2	6
 //     absolute	LSR oper	4E	3	6
 //     absolute,X	LSR oper,X	5E	3	7
+void lsr(cpu_t *cpu, enum address_mode mode);
+
 // NOP
 //
 //     No Operation
@@ -505,6 +573,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	NOP	EA	1	2
+void nop(cpu_t *cpu, enum address_mode mode);
+
 // ORA
 //
 //     OR Memory with Accumulator
@@ -521,6 +591,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	ORA oper,Y	19	3	4*
 //     (indirect,X)	ORA (oper,X)	01	2	6
 //     (indirect),Y	ORA (oper),Y	11	2	5*
+void ora(cpu_t *cpu, enum address_mode mode);
+
 // PHA
 //
 //     Push Accumulator on Stack
@@ -530,6 +602,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHA	48	1	3
+void pha(cpu_t *cpu, enum address_mode mode);
+
 // PHP
 //
 //     Push Processor Status on Stack
@@ -542,6 +616,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHP	08	1	3
+void php(cpu_t *cpu, enum address_mode mode);
+
 // PLA
 //
 //     Pull Accumulator from Stack
@@ -551,6 +627,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLA	68	1	4
+void pla(cpu_t *cpu, enum address_mode mode);
+
 // PLP
 //
 //     Pull Processor Status from Stack
@@ -563,6 +641,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLP	28	1	4
+void plp(cpu_t *cpu, enum address_mode mode);
+
 // ROL
 //
 //     Rotate One Bit Left (Memory or Accumulator)
@@ -576,6 +656,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	ROL oper,X	36	2	6
 //     absolute	ROL oper	2E	3	6
 //     absolute,X	ROL oper,X	3E	3	7
+void rol(cpu_t *cpu, enum address_mode mode);
+
 // ROR
 //
 //     Rotate One Bit Right (Memory or Accumulator)
@@ -589,6 +671,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage,X	ROR oper,X	76	2	6
 //     absolute	ROR oper	6E	3	6
 //     absolute,X	ROR oper,X	7E	3	7
+void ror(cpu_t *cpu, enum address_mode mode);
+
 // RTI
 //
 //     Return from Interrupt
@@ -601,6 +685,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTI	40	1	6
+void rti(cpu_t *cpu, enum address_mode mode);
+
 // RTS
 //
 //     Return from Subroutine
@@ -610,6 +696,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTS	60	1	6
+void rts(cpu_t *cpu, enum address_mode mode);
+
 // SBC
 //
 //     Subtract Memory from Accumulator with Borrow
@@ -626,6 +714,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	SBC oper,Y	F9	3	4*
 //     (indirect,X)	SBC (oper,X)	E1	2	6
 //     (indirect),Y	SBC (oper),Y	F1	2	5*
+void sbc(cpu_t *cpu, enum address_mode mode);
+
 // SEC
 //
 //     Set Carry Flag
@@ -635,6 +725,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	1	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEC	38	1	2
+void sec(cpu_t *cpu, enum address_mode mode);
+
 // SED
 //
 //     Set Decimal Flag
@@ -644,6 +736,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	1	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SED	F8	1	2
+void sed(cpu_t *cpu, enum address_mode mode);
+
 // SEI
 //
 //     Set Interrupt Disable Status
@@ -653,6 +747,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEI	78	1	2
+void sei(cpu_t *cpu, enum address_mode mode);
+
 // STA
 //
 //     Store Accumulator in Memory
@@ -668,6 +764,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	STA oper,Y	99	3	5
 //     (indirect,X)	STA (oper,X)	81	2	6
 //     (indirect),Y	STA (oper),Y	91	2	6
+void sta(cpu_t *cpu, enum address_mode mode);
+
 // STX
 //
 //     Store Index X in Memory
@@ -679,6 +777,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage	STX oper	86	2	3
 //     zeropage,Y	STX oper,Y	96	2	4
 //     absolute	STX oper	8E	3	4
+void stx(cpu_t *cpu, enum address_mode mode);
+
 // STY
 //
 //     Sore Index Y in Memory
@@ -690,6 +790,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     zeropage	STY oper	84	2	3
 //     zeropage,X	STY oper,X	94	2	4
 //     absolute	STY oper	8C	3	4
+void sty(cpu_t *cpu, enum address_mode mode);
+
 // TAX
 //
 //     Transfer Accumulator to Index X
@@ -699,6 +801,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAX	AA	1	2
+void tax(cpu_t *cpu, enum address_mode mode);
+
 // TAY
 //
 //     Transfer Accumulator to Index Y
@@ -708,6 +812,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAY	A8	1	2
+void tay(cpu_t *cpu, enum address_mode mode);
+
 // TSX
 //
 //     Transfer Stack Pointer to Index X
@@ -717,6 +823,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TSX	BA	1	2
+void tsx(cpu_t *cpu, enum address_mode mode);
+
 // TXA
 //
 //     Transfer Index X to Accumulator
@@ -726,6 +834,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXA	8A	1	2
+void txa(cpu_t *cpu, enum address_mode mode);
+
 // TXS
 //
 //     Transfer Index X to Stack Register
@@ -735,6 +845,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXS	9A	1	2
+void txs(cpu_t *cpu, enum address_mode mode);
+
 // TYA
 //
 //     Transfer Index Y to Accumulator
@@ -744,6 +856,7 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TYA	98	1	82
+void tya(cpu_t *cpu, enum address_mode mode);
 
 int execute(cpu_t *cpu) {
     // INSTRUCTION_LOOKUP[0x69] = INSTRUCTION(adc, IMMEDIATE);
