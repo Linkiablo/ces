@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include <assert.h>
+#include <stdbool.h>
 
 #define READ_8(cpu) (_read_8(cpu))
 #define READ_16(cpu) (READ_8(cpu) & (READ_8(cpu) << 8))
@@ -19,7 +20,8 @@
 #define CHECK_FLAG_V(cpu, m, n, res)                                           \
     SET_FLAG(cpu, FLAG_V, ((m ^ res) & (n ^ res) & 0x80) != 0)
 
-#define INSTRUCTION(i, m) ((instruction_t){.inst = i, .mode = m})
+#define INSTRUCTION(i, m, c, cb)                                               \
+    { .inst = i, .mode = m, .cycles = c, .check_boundary = cb }
 
 /* private method because of possible undefined order of operations */
 uint8_t _read_8(cpu_t *cpu) {
@@ -66,47 +68,73 @@ enum address_mode {
     RELATIVE
 };
 
-uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
+uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
+    uint16_t offset = 0;
+
     switch (mode) {
     case ACCUMULATOR:
+        // early return
         return (uint8_t *)&(cpu->a);
     case IMMEDIATE:
         // increment PC
         READ_8(cpu);
-        // return new address
-        return cpu->mem + cpu->pc;
+        offset = cpu->pc;
+        break;
     case ABSOLUTE:
-        return cpu->mem + READ_16(cpu);
+        offset = READ_16(cpu);
+        break;
     case ZERO_PAGE:
-        return cpu->mem + READ_8(cpu);
+        offset = READ_8(cpu);
+        break;
     case X_ABS:
-        return cpu->mem + READ_16(cpu) + cpu->x;
+        offset = READ_16(cpu) + cpu->x;
+        break;
     case Y_ABS:
-        return cpu->mem + READ_16(cpu) + cpu->y;
-    case X_ZERO:
-        return cpu->mem + READ_8(cpu) + cpu->x;
-    case Y_ZERO:
-        return cpu->mem + READ_8(cpu) + cpu->y;
+        offset = READ_16(cpu) + cpu->y;
+        break;
+    case X_ZERO:;
+        // never affects hi byte, instead wrapping add
+        offset = (uint8_t)(READ_8(cpu) + cpu->x);
+        break;
+    case Y_ZERO:;
+        offset = (uint8_t)(READ_8(cpu) + cpu->y);
+        break;
     case INDIRECT:;
         void *abs_addr = cpu->mem + READ_16(cpu);
-        return cpu->mem + LOAD_16(abs_addr);
-    case PRE_INDIRECT:;                                  // empty statement
-        void *xz_addr = cpu->mem + READ_8(cpu) + cpu->x; // X_ZERO
-        return cpu->mem + LOAD_16(xz_addr);
-    case POST_INDIRECT:;                                 // empty statement
-        void *yz_addr = cpu->mem + READ_8(cpu) + cpu->y; // Y_ZERO
-        return cpu->mem + LOAD_16(yz_addr);
+        offset = LOAD_16(abs_addr);
+        break;
+    case PRE_INDIRECT:;                           // empty statement
+        uint8_t offset_ix = READ_8(cpu) + cpu->x; // wrapping add
+        void *xz_addr = cpu->mem + offset_ix;     // X_ZERO
+        offset = LOAD_16(xz_addr);
+        break;
+    case POST_INDIRECT:;                        // empty statement
+        void *yz_addr = cpu->mem + READ_8(cpu); // Y_ZERO
+        offset = LOAD_16(yz_addr) + cpu->y;
+        break;
     default:
         fprintf(stderr, "ERROR: unknown address mode for operation!");
         exit(1);
     }
+
+    if (check_boundary) {
+        // add cycle if page boundary is crossed
+        if ((offset >> 8) != (cpu->pc >> 8)) {
+            cpu->cycles += 1;
+        }
+    }
+
+    return cpu->mem + offset;
 }
 
-typedef void (*instruction_fn)(cpu_t *cpu, enum address_mode mode);
+typedef void (*instruction_fn)(cpu_t *cpu, enum address_mode mode,
+                               bool check_boundary);
 
 typedef struct instruction_t {
     instruction_fn inst;
     enum address_mode mode;
+    uint8_t cycles;
+    bool check_boundary;
 } instruction_t;
 
 // ADC
@@ -125,8 +153,8 @@ typedef struct instruction_t {
 //     absolute,Y	ADC oper,Y	79	3	4*
 //     (indirect,X)	ADC (oper,X)	61	2	6
 //     (indirect),Y	ADC (oper),Y	71	2	5*
-void adc(cpu_t *cpu, enum address_mode mode) {
-    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode);
+void adc(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
+    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
 
     // carry works, because carry flag is the first bit
     int16_t res = *oper + cpu->a + (cpu->p & FLAG_C);
@@ -155,8 +183,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	AND oper,Y	39	3	4*
 //     (indirect,X)	AND (oper,X)	21	2	6
 //     (indirect),Y	AND (oper),Y	31	2	5*
-void and (cpu_t * cpu, enum address_mode mode) {
-    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode);
+void and (cpu_t * cpu, enum address_mode mode, bool check_boundary) {
+    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
 
     int8_t res = *oper & cpu->a;
     CHECK_FLAG_N(cpu, res);
@@ -178,7 +206,7 @@ void and (cpu_t * cpu, enum address_mode mode) {
 //     zeropage,X	ASL oper,X	16	2	6
 //     absolute		ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
-void asl(cpu_t *cpu, enum address_mode mode);
+void asl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BCC
 //
@@ -189,7 +217,7 @@ void asl(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCC oper	90	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bcc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BCS
 //
@@ -200,7 +228,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCS oper	B0	2	2**
-void bcs(cpu_t *cpu, enum address_mode mode);
+void bcs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BEQ
 //
@@ -211,7 +239,7 @@ void bcs(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BEQ oper	F0	2	2**
-void beq(cpu_t *cpu, enum address_mode mode);
+void beq(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BIT
 //
@@ -226,7 +254,7 @@ void beq(cpu_t *cpu, enum address_mode mode);
 //     addressing	assembler	opc	bytes	cycles
 //     zeropage	BIT oper	24	2	3
 //     absolute	BIT oper	2C	3	4
-void bit(cpu_t *cpu, enum address_mode mode);
+void bit(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BMI
 //
@@ -237,7 +265,7 @@ void bit(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BMI oper	30	2	2**
-void bmi(cpu_t *cpu, enum address_mode mode);
+void bmi(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BNE
 //
@@ -248,7 +276,7 @@ void bmi(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BNE oper	D0	2	2**
-void bne(cpu_t *cpu, enum address_mode mode);
+void bne(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BPL
 //
@@ -259,7 +287,7 @@ void bne(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BPL oper	10	2	2**
-void bpl(cpu_t *cpu, enum address_mode mode);
+void bpl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BRK
 //
@@ -280,7 +308,7 @@ void bpl(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	BRK	00	1	7
-void brk(cpu_t *cpu, enum address_mode mode);
+void brk(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BVC
 //
@@ -291,7 +319,7 @@ void brk(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVC oper	50	2	2**
-void bvc(cpu_t *cpu, enum address_mode mode);
+void bvc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // BVS
 //
@@ -302,7 +330,7 @@ void bvc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVS oper	70	2	2**
-void bvs(cpu_t *cpu, enum address_mode mode);
+void bvs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CLC
 //
@@ -313,7 +341,7 @@ void bvs(cpu_t *cpu, enum address_mode mode);
 //     -	-	0	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLC	18	1	2
-void clc(cpu_t *cpu, enum address_mode mode);
+void clc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CLD
 //
@@ -324,7 +352,7 @@ void clc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	0	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLD	D8	1	2
-void cld(cpu_t *cpu, enum address_mode mode);
+void cld(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CLI
 //
@@ -335,7 +363,7 @@ void cld(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	0	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLI	58	1	2
-void cli(cpu_t *cpu, enum address_mode mode);
+void cli(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CLV
 //
@@ -346,7 +374,7 @@ void cli(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	0
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLV	B8	1	2
-void clv(cpu_t *cpu, enum address_mode mode);
+void clv(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CMP
 //
@@ -364,7 +392,7 @@ void clv(cpu_t *cpu, enum address_mode mode);
 //     absolute,Y	CMP oper,Y	D9	3	4*
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
-void cmp(cpu_t *cpu, enum address_mode mode);
+void cmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CPX
 //
@@ -377,7 +405,7 @@ void cmp(cpu_t *cpu, enum address_mode mode);
 //     immediate	CPX #oper	E0	2	2
 //     zeropage	CPX oper	E4	2	3
 //     absolute	CPX oper	EC	3	4
-void cpx(cpu_t *cpu, enum address_mode mode);
+void cpx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // CPY
 //
@@ -390,7 +418,7 @@ void cpx(cpu_t *cpu, enum address_mode mode);
 //     immediate	CPY #oper	C0	2	2
 //     zeropage	CPY oper	C4	2	3
 //     absolute	CPY oper	CC	3	4
-void cpy(cpu_t *cpu, enum address_mode mode);
+void cpy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // DEC
 //
@@ -404,7 +432,7 @@ void cpy(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	DEC oper,X	D6	2	6
 //     absolute	DEC oper	CE	3	6
 //     absolute,X	DEC oper,X	DE	3	7
-void dec(cpu_t *cpu, enum address_mode mode);
+void dec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // DEX
 //
@@ -415,7 +443,7 @@ void dec(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEX	CA	1	2
-void dex(cpu_t *cpu, enum address_mode mode);
+void dex(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // DEY
 //
@@ -426,7 +454,7 @@ void dex(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEY	88	1	2
-void dey(cpu_t *cpu, enum address_mode mode);
+void dey(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // EOR
 //
@@ -444,7 +472,7 @@ void dey(cpu_t *cpu, enum address_mode mode);
 //     absolute,Y	EOR oper,Y	59	3	4*
 //     (indirect,X)	EOR (oper,X)	41	2	6
 //     (indirect),Y	EOR (oper),Y	51	2	5*
-void eor(cpu_t *cpu, enum address_mode mode);
+void eor(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // INC
 //
@@ -458,7 +486,7 @@ void eor(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	INC oper,X	F6	2	6
 //     absolute	INC oper	EE	3	6
 //     absolute,X	INC oper,X	FE	3	7
-void inc(cpu_t *cpu, enum address_mode mode);
+void inc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // INX
 //
@@ -469,7 +497,7 @@ void inc(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INX	E8	1	2
-void inx(cpu_t *cpu, enum address_mode mode);
+void inx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // INY
 //
@@ -480,7 +508,7 @@ void inx(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INY	C8	1	2
-void iny(cpu_t *cpu, enum address_mode mode);
+void iny(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // JMP
 //
@@ -493,7 +521,7 @@ void iny(cpu_t *cpu, enum address_mode mode);
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JMP oper	4C	3	3
 //     indirect	JMP (oper)	6C	3	5
-void jmp(cpu_t *cpu, enum address_mode mode);
+void jmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // JSR
 //
@@ -506,7 +534,7 @@ void jmp(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JSR oper	20	3	6
-void jsr(cpu_t *cpu, enum address_mode mode);
+void jsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // LDA
 //
@@ -524,7 +552,7 @@ void jsr(cpu_t *cpu, enum address_mode mode);
 //     absolute,Y	LDA oper,Y	B9	3	4*
 //     (indirect,X)	LDA (oper,X)	A1	2	6
 //     (indirect),Y	LDA (oper),Y	B1	2	5*
-void lda(cpu_t *cpu, enum address_mode mode);
+void lda(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // LDX
 //
@@ -539,7 +567,7 @@ void lda(cpu_t *cpu, enum address_mode mode);
 //     zeropage,Y	LDX oper,Y	B6	2	4
 //     absolute	LDX oper	AE	3	4
 //     absolute,Y	LDX oper,Y	BE	3	4*
-void ldx(cpu_t *cpu, enum address_mode mode);
+void ldx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // LDY
 //
@@ -554,7 +582,7 @@ void ldx(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	LDY oper,X	B4	2	4
 //     absolute	LDY oper	AC	3	4
 //     absolute,X	LDY oper,X	BC	3	4*
-void ldy(cpu_t *cpu, enum address_mode mode);
+void ldy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // LSR
 //
@@ -569,7 +597,7 @@ void ldy(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	LSR oper,X	56	2	6
 //     absolute	LSR oper	4E	3	6
 //     absolute,X	LSR oper,X	5E	3	7
-void lsr(cpu_t *cpu, enum address_mode mode);
+void lsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // NOP
 //
@@ -580,8 +608,8 @@ void lsr(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		NOP		EA	1	2
-void nop(cpu_t *cpu, enum address_mode mode) {
-	cpu->cycles += 2;
+void nop(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
+    cpu->cycles += 2;
 }
 
 // ORA
@@ -600,7 +628,7 @@ void nop(cpu_t *cpu, enum address_mode mode) {
 //     absolute,Y	ORA oper,Y	19	3	4*
 //     (indirect,X)	ORA (oper,X)	01	2	6
 //     (indirect),Y	ORA (oper),Y	11	2	5*
-void ora(cpu_t *cpu, enum address_mode mode);
+void ora(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // PHA
 //
@@ -611,7 +639,7 @@ void ora(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHA	48	1	3
-void pha(cpu_t *cpu, enum address_mode mode);
+void pha(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // PHP
 //
@@ -625,7 +653,7 @@ void pha(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHP	08	1	3
-void php(cpu_t *cpu, enum address_mode mode);
+void php(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // PLA
 //
@@ -636,7 +664,7 @@ void php(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLA	68	1	4
-void pla(cpu_t *cpu, enum address_mode mode);
+void pla(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // PLP
 //
@@ -650,7 +678,7 @@ void pla(cpu_t *cpu, enum address_mode mode);
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLP	28	1	4
-void plp(cpu_t *cpu, enum address_mode mode);
+void plp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // ROL
 //
@@ -665,7 +693,7 @@ void plp(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	ROL oper,X	36	2	6
 //     absolute	ROL oper	2E	3	6
 //     absolute,X	ROL oper,X	3E	3	7
-void rol(cpu_t *cpu, enum address_mode mode);
+void rol(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // ROR
 //
@@ -680,7 +708,7 @@ void rol(cpu_t *cpu, enum address_mode mode);
 //     zeropage,X	ROR oper,X	76	2	6
 //     absolute	ROR oper	6E	3	6
 //     absolute,X	ROR oper,X	7E	3	7
-void ror(cpu_t *cpu, enum address_mode mode);
+void ror(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // RTI
 //
@@ -694,7 +722,7 @@ void ror(cpu_t *cpu, enum address_mode mode);
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTI	40	1	6
-void rti(cpu_t *cpu, enum address_mode mode);
+void rti(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // RTS
 //
@@ -705,7 +733,7 @@ void rti(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTS	60	1	6
-void rts(cpu_t *cpu, enum address_mode mode);
+void rts(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // SBC
 //
@@ -723,7 +751,7 @@ void rts(cpu_t *cpu, enum address_mode mode);
 //     absolute,Y	SBC oper,Y	F9	3	4*
 //     (indirect,X)	SBC (oper,X)	E1	2	6
 //     (indirect),Y	SBC (oper),Y	F1	2	5*
-void sbc(cpu_t *cpu, enum address_mode mode);
+void sbc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // SEC
 //
@@ -734,7 +762,7 @@ void sbc(cpu_t *cpu, enum address_mode mode);
 //     -	-	1	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEC	38	1	2
-void sec(cpu_t *cpu, enum address_mode mode);
+void sec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // SED
 //
@@ -745,7 +773,7 @@ void sec(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	1	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SED	F8	1	2
-void sed(cpu_t *cpu, enum address_mode mode);
+void sed(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // SEI
 //
@@ -756,7 +784,7 @@ void sed(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEI	78	1	2
-void sei(cpu_t *cpu, enum address_mode mode);
+void sei(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // STA
 //
@@ -773,7 +801,7 @@ void sei(cpu_t *cpu, enum address_mode mode);
 //     absolute,Y	STA oper,Y	99	3	5
 //     (indirect,X)	STA (oper,X)	81	2	6
 //     (indirect),Y	STA (oper),Y	91	2	6
-void sta(cpu_t *cpu, enum address_mode mode);
+void sta(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // STX
 //
@@ -786,7 +814,7 @@ void sta(cpu_t *cpu, enum address_mode mode);
 //     zeropage	STX oper	86	2	3
 //     zeropage,Y	STX oper,Y	96	2	4
 //     absolute	STX oper	8E	3	4
-void stx(cpu_t *cpu, enum address_mode mode);
+void stx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // STY
 //
@@ -799,7 +827,7 @@ void stx(cpu_t *cpu, enum address_mode mode);
 //     zeropage	STY oper	84	2	3
 //     zeropage,X	STY oper,X	94	2	4
 //     absolute	STY oper	8C	3	4
-void sty(cpu_t *cpu, enum address_mode mode);
+void sty(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TAX
 //
@@ -810,7 +838,7 @@ void sty(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAX	AA	1	2
-void tax(cpu_t *cpu, enum address_mode mode);
+void tax(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TAY
 //
@@ -821,7 +849,7 @@ void tax(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAY	A8	1	2
-void tay(cpu_t *cpu, enum address_mode mode);
+void tay(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TSX
 //
@@ -832,7 +860,7 @@ void tay(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TSX	BA	1	2
-void tsx(cpu_t *cpu, enum address_mode mode);
+void tsx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TXA
 //
@@ -843,7 +871,7 @@ void tsx(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXA	8A	1	2
-void txa(cpu_t *cpu, enum address_mode mode);
+void txa(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TXS
 //
@@ -854,7 +882,7 @@ void txa(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXS	9A	1	2
-void txs(cpu_t *cpu, enum address_mode mode);
+void txs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 // TYA
 //
@@ -865,269 +893,142 @@ void txs(cpu_t *cpu, enum address_mode mode);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TYA	98	1	82
-void tya(cpu_t *cpu, enum address_mode mode);
+void tya(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 
 instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(adc, ZERO_PAGE),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(adc, IMMEDIATE),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
-    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(adc, ZERO_PAGE, 3, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(adc, IMMEDIATE, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false),
 };
 
 int execute(cpu_t *cpu) {
     instruction_t i = INSTRUCTION_LOOKUP[*(cpu->mem + cpu->pc)];
-    i.inst(cpu, i.mode);
+    i.inst(cpu, i.mode, i.check_boundary);
 
     return 0;
 }

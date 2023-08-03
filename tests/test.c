@@ -48,6 +48,25 @@ void test_adc_immediate() {
     LOG("test_adc_immediate successfull");
 }
 
+void test_adc_zeropage() {
+    LOG("running test_adc_zeropage");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // read from second memory addr
+    uint8_t program[3] = {0x65, 2, 69};
+
+    load_program(&cpu, program, 3);
+
+    execute(&cpu);
+
+    assert(cpu.a == 69);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_zeropage successfull");
+}
+
 void test_v_flag() {
     LOG("running test_v_flag");
     cpu_t cpu;
@@ -78,26 +97,6 @@ void test_v_flag() {
     destroy_cpu(&cpu);
     LOG("test_v_flag successfull");
 }
-
-void test_adc_zeropage() {
-    LOG("running test_adc_zeropage");
-    cpu_t cpu;
-    init_cpu(&cpu, 0xFFFF);
-
-    // read from second memory addr
-    uint8_t program[3] = {0x65, 2, 69};
-
-    load_program(&cpu, program, 3);
-
-    execute(&cpu);
-
-    assert(cpu.a == 69);
-    assert(cpu.p == 0);
-
-    destroy_cpu(&cpu);
-    LOG("test_adc_zeropage successfull");
-}
-
 
 int main() {
     test_adc_immediate();
