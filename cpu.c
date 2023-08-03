@@ -10,6 +10,15 @@
 #define SET_FLAG(cpu, flag, cond)                                              \
     (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
 
+#define CHECK_FLAG_N(cpu, res) SET_FLAG(cpu, FLAG_N, res < 0)
+#define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, (res & 0xFF00) != 0)
+#define CHECK_FLAG_Z(cpu, res) SET_FLAG(cpu, FLAG_Z, res == 0)
+// v flag:
+// https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+// M = *oper, N = cpu->a
+#define CHECK_FLAG_V(cpu, m, n, res)                                           \
+    SET_FLAG(cpu, FLAG_V, ((m ^ res) & (n ^ res) & 0x80) != 0)
+
 #define INSTRUCTION(i, m) ((instruction_t){.inst = i, .mode = m})
 
 /* private method because of possible undefined order of operations */
@@ -53,14 +62,14 @@ enum address_mode {
     INDIRECT,
     PRE_INDIRECT,
     POST_INDIRECT,
-    IMPLIED
-    // TODO: RELATIVE?
+    IMPLIED,
+    RELATIVE
 };
 
-void *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
+uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode) {
     switch (mode) {
     case ACCUMULATOR:
-        return &(cpu->a);
+        return (uint8_t *)&(cpu->a);
     case IMMEDIATE:
         // increment PC
         READ_8(cpu);
@@ -100,11 +109,6 @@ typedef struct instruction_t {
     enum address_mode mode;
 } instruction_t;
 
-// TODO: richtig machen
-static const instruction_t INSTRUCTION_LOOKUP[0xFF] = {
-	INSTRUCTION(brk, IMPLIED);
-};
-
 // ADC
 //
 //     Add Memory to Accumulator with Carry
@@ -123,17 +127,14 @@ static const instruction_t INSTRUCTION_LOOKUP[0xFF] = {
 //     (indirect),Y	ADC (oper),Y	71	2	5*
 void adc(cpu_t *cpu, enum address_mode mode) {
     int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode);
+
     // carry works, because carry flag is the first bit
     int16_t res = *oper + cpu->a + (cpu->p & FLAG_C);
 
-    SET_FLAG(cpu, FLAG_N, res < 0);
-    SET_FLAG(cpu, FLAG_Z, res == 0);
-    SET_FLAG(cpu, FLAG_C, (res & 0xFF00) != 0);
-    // v flag:
-    // https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
-    // M = *oper, N = cpu->a
-    // cpu->p |= ((*oper) ^ res) & ((cpu->a) ^ res) & 0x80;
-    SET_FLAG(cpu, FLAG_V, (((*oper) ^ res) & ((cpu->a) ^ res) & 0x80) != 0);
+    CHECK_FLAG_N(cpu, res);
+    CHECK_FLAG_Z(cpu, res);
+    CHECK_FLAG_C(cpu, res);
+    CHECK_FLAG_V(cpu, *oper, cpu->a, res);
 
     cpu->a = res & 0xFF;
 }
@@ -147,14 +148,22 @@ void adc(cpu_t *cpu, enum address_mode mode) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	AND #oper	29	2	2
-//     zeropage	AND oper	25	2	3
+//     zeropage		AND oper	25	2	3
 //     zeropage,X	AND oper,X	35	2	4
-//     absolute	AND oper	2D	3	4
+//     absolute		AND oper	2D	3	4
 //     absolute,X	AND oper,X	3D	3	4*
 //     absolute,Y	AND oper,Y	39	3	4*
 //     (indirect,X)	AND (oper,X)	21	2	6
 //     (indirect),Y	AND (oper),Y	31	2	5*
-void and(cpu_t *cpu, enum address_mode mode);
+void and (cpu_t * cpu, enum address_mode mode) {
+    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode);
+
+    int8_t res = *oper & cpu->a;
+    CHECK_FLAG_N(cpu, res);
+    CHECK_FLAG_Z(cpu, res);
+
+    cpu->a = res;
+}
 
 // ASL
 //
@@ -164,10 +173,10 @@ void and(cpu_t *cpu, enum address_mode mode);
 //     N	Z	C	I	D	V
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     accumulator	ASL A	0A	1	2
-//     zeropage	ASL oper	06	2	5
+//     accumulator	ASL A		0A	1	2
+//     zeropage		ASL oper	06	2	5
 //     zeropage,X	ASL oper,X	16	2	6
-//     absolute	ASL oper	0E	3	6
+//     absolute		ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
 void asl(cpu_t *cpu, enum address_mode mode);
 
@@ -191,7 +200,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCS oper	B0	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bcs(cpu_t *cpu, enum address_mode mode);
 
 // BEQ
 //
@@ -202,7 +211,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BEQ oper	F0	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void beq(cpu_t *cpu, enum address_mode mode);
 
 // BIT
 //
@@ -217,7 +226,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     addressing	assembler	opc	bytes	cycles
 //     zeropage	BIT oper	24	2	3
 //     absolute	BIT oper	2C	3	4
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bit(cpu_t *cpu, enum address_mode mode);
 
 // BMI
 //
@@ -228,7 +237,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BMI oper	30	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bmi(cpu_t *cpu, enum address_mode mode);
 
 // BNE
 //
@@ -239,7 +248,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BNE oper	D0	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bne(cpu_t *cpu, enum address_mode mode);
 
 // BPL
 //
@@ -250,7 +259,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BPL oper	10	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode);
+void bpl(cpu_t *cpu, enum address_mode mode);
 
 // BRK
 //
@@ -271,7 +280,7 @@ void bcc(cpu_t *cpu, enum address_mode mode);
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	BRK	00	1	7
-void bcc(cpu_t *cpu, enum address_mode mode);
+void brk(cpu_t *cpu, enum address_mode mode);
 
 // BVC
 //
@@ -570,8 +579,10 @@ void lsr(cpu_t *cpu, enum address_mode mode);
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	NOP	EA	1	2
-void nop(cpu_t *cpu, enum address_mode mode);
+//     implied		NOP		EA	1	2
+void nop(cpu_t *cpu, enum address_mode mode) {
+	cpu->cycles += 2;
+}
 
 // ORA
 //
@@ -856,11 +867,266 @@ void txs(cpu_t *cpu, enum address_mode mode);
 //     implied	TYA	98	1	82
 void tya(cpu_t *cpu, enum address_mode mode);
 
-int execute(cpu_t *cpu) {
-    // INSTRUCTION_LOOKUP[0x69] = INSTRUCTION(adc, IMMEDIATE);
+instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(adc, ZERO_PAGE),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(adc, IMMEDIATE),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+    INSTRUCTION(nop, IMPLIED),
+};
 
-    // instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
-    instruction_t i = INSTRUCTION(adc, ZERO_PAGE);
+int execute(cpu_t *cpu) {
+    instruction_t i = INSTRUCTION_LOOKUP[*(cpu->mem + cpu->pc)];
     i.inst(cpu, i.mode);
 
     return 0;
