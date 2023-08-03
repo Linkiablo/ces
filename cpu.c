@@ -100,7 +100,7 @@ typedef struct instruction_t {
 } instruction_t;
 
 // TODO: richtig machen
-instruction_t INSTRUCTION_LOOKUP[0xFF];
+static const instruction_t INSTRUCTION_LOOKUP[0xFF];
 
 // ADC
 //
@@ -123,11 +123,8 @@ void adc(cpu_t *cpu, enum address_mode mode) {
     // carry works, because carry flag is the first bit
     int16_t res = *oper + cpu->a + (cpu->p & FLAG_C);
 
-    // n flag
     SET_FLAG(cpu, FLAG_N, res < 0);
-    // z flag
     SET_FLAG(cpu, FLAG_Z, res == 0);
-    // c flag
     SET_FLAG(cpu, FLAG_C, (res & 0xFF00) != 0);
     // v flag:
     // https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
@@ -752,7 +749,7 @@ int execute(cpu_t *cpu) {
     // INSTRUCTION_LOOKUP[0x69] = INSTRUCTION(adc, IMMEDIATE);
 
     // instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
-    instruction_t i = INSTRUCTION(adc, IMMEDIATE);
+    instruction_t i = INSTRUCTION(adc, ZERO_PAGE);
     i.inst(cpu, i.mode);
 
     return 0;
