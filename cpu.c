@@ -105,8 +105,6 @@ static const instruction_t INSTRUCTION_LOOKUP[0xFF] = {
 	INSTRUCTION(brk, IMPLIED);
 };
 
-void nop(cpu_t *cpu, enum address_mode mode);
-
 // ADC
 //
 //     Add Memory to Accumulator with Carry
