@@ -17,7 +17,7 @@ void test_adc_immediate() {
 
     execute(&cpu);
 
-    assert(cpu.cycles == 0);
+    assert(cpu.cycles == 2);
     assert(cpu.a == 1);
     assert(cpu.p == 0);
 
@@ -67,6 +67,144 @@ void test_adc_zeropage() {
     LOG("test_adc_zeropage successfull");
 }
 
+void test_adc_zero_x() {
+    LOG("running test_adc_zero_x");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // read from third memory addr, test wrapping
+    uint8_t program[3] = {0x75, 0xFF, 69};
+    cpu.x = 3;
+
+    load_program(&cpu, program, 3);
+
+    execute(&cpu);
+
+    assert(cpu.a == 69);
+    assert(cpu.cycles == 4);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_zero_x successfull");
+}
+
+void test_adc_abs() {
+    LOG("running test_adc_abs");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // read from fourth memory addr
+    // 			       lo hi
+    uint8_t program[4] = {0x6D, 3, 0, 69};
+
+    load_program(&cpu, program, 4);
+
+    execute(&cpu);
+
+    assert(cpu.a == 69);
+    assert(cpu.cycles == 4);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_abs successfull");
+}
+
+void test_adc_abs_x() {
+    LOG("running test_adc_abs_x");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // read from second memory addr
+    uint8_t program[258]; // 0xff + 3
+    memset(program, 0, 258);
+
+    program[0] = 0x7D;
+    program[1] = 0xFF;
+    program[2] = 0;
+    program[257] = 69;
+
+    // 255 + 2 = 257
+    cpu.x = 2;
+
+    load_program(&cpu, program, 258);
+
+    execute(&cpu);
+
+    // page boundary crossed
+    assert(cpu.cycles == 5);
+    assert(cpu.a == 69);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_abs_x successfull");
+}
+
+void test_adc_abs_y() {
+    LOG("running test_adc_abs_y");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // read from fourth memory addr
+    uint8_t program[4] = {0x79, 2, 0, 69};
+    // 2 + 1 = 3
+    cpu.y = 1;
+
+    load_program(&cpu, program, 4);
+
+    execute(&cpu);
+
+    assert(cpu.a == 69);
+    // no page boundary crossed
+    assert(cpu.cycles == 4);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_abs_y successfull");
+}
+
+void test_adc_pre_ind() {
+    LOG("running test_adc_pre_ind");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    uint8_t program[5] = {0x61, 1, 4, 0, 69};
+    cpu.x = 1; // 1 + x = 2
+	       // $0003 -> $0004
+
+    load_program(&cpu, program, 5);
+
+    execute(&cpu);
+
+    assert(cpu.cycles == 6);
+    assert(cpu.a == 69);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_pre_ind successfull");
+}
+
+void test_adc_post_ind() {
+    LOG("running test_adc_post_ind");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    uint8_t program[5] = {0x71, 2, 1, 0, 69};
+    cpu.y = 3; // $0002 -> 1
+	       // 1 + y = $0004
+
+    load_program(&cpu, program, 5);
+
+    execute(&cpu);
+
+    // no page boundary
+    assert(cpu.cycles == 5);
+    assert(cpu.a == 69);
+    assert(cpu.p == 0);
+
+    destroy_cpu(&cpu);
+    LOG("test_adc_post successfull");
+}
+
 void test_v_flag() {
     LOG("running test_v_flag");
     cpu_t cpu;
@@ -102,5 +240,11 @@ int main() {
     test_adc_immediate();
     test_adc_zeropage();
     test_v_flag();
+    test_adc_zero_x();
+    test_adc_abs();
+    test_adc_abs_x();
+    test_adc_abs_y();
+    test_adc_pre_ind();
+    test_adc_post_ind();
     return 0;
 }

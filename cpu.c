@@ -3,10 +3,10 @@
 #include <stdbool.h>
 
 #define READ_8(cpu) (_read_8(cpu))
-#define READ_16(cpu) (READ_8(cpu) & (READ_8(cpu) << 8))
+#define READ_16(cpu) (READ_8(cpu) | (READ_8(cpu) << 8))
 
 #define LOAD_8(addr) (*((uint8_t *)addr))
-#define LOAD_16(addr) (LOAD_8(addr) & (LOAD_8(addr + 1) << 8))
+#define LOAD_16(addr) (LOAD_8(addr) | (LOAD_8(addr + 1) << 8))
 
 #define SET_FLAG(cpu, flag, cond)                                              \
     (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
@@ -57,10 +57,10 @@ enum address_mode {
     IMMEDIATE,
     ABSOLUTE,
     ZERO_PAGE,
-    X_ABS,
-    Y_ABS,
-    X_ZERO,
-    Y_ZERO,
+    ABS_X,
+    ABS_Y,
+    ZERO_X,
+    ZERO_Y,
     INDIRECT,
     PRE_INDIRECT,
     POST_INDIRECT,
@@ -86,17 +86,17 @@ uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
     case ZERO_PAGE:
         offset = READ_8(cpu);
         break;
-    case X_ABS:
+    case ABS_X:
         offset = READ_16(cpu) + cpu->x;
         break;
-    case Y_ABS:
+    case ABS_Y:
         offset = READ_16(cpu) + cpu->y;
         break;
-    case X_ZERO:;
+    case ZERO_X:;
         // never affects hi byte, instead wrapping add
         offset = (uint8_t)(READ_8(cpu) + cpu->x);
         break;
-    case Y_ZERO:;
+    case ZERO_Y:;
         offset = (uint8_t)(READ_8(cpu) + cpu->y);
         break;
     case INDIRECT:;
@@ -609,9 +609,7 @@ void lsr(cpu_t *cpu, uint8_t *oper_ptr);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		NOP		EA	1	2
-void nop(cpu_t *cpu, uint8_t *oper_ptr) {
-    cpu->cycles += 2;
-}
+void nop(cpu_t *cpu, uint8_t *oper_ptr) { cpu->cycles += 2; }
 
 // ORA
 //
@@ -897,139 +895,267 @@ void txs(cpu_t *cpu, uint8_t *oper_ptr);
 void tya(cpu_t *cpu, uint8_t *oper_ptr);
 
 instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(adc, ZERO_PAGE, 3, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(adc, IMMEDIATE, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
-    INSTRUCTION(nop, IMPLIED, 2, false),
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x00
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x01
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x02
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x03
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x04
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x05
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x06
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x07
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x08
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x09
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x10
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x11
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x12
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x13
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x14
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x15
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x16
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x17
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x18
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x19
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x1F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x20
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x21
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x22
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x23
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x24
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x25
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x26
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x27
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x28
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x29
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x2F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x30
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x31
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x32
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x33
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x34
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x35
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x36
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x37
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x38
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x39
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x3F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x40
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x41
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x42
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x43
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x44
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x45
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x46
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x47
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x48
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x49
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x4F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x50
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x51
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x52
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x53
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x54
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x55
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x56
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x57
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x58
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x59
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x5F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x60
+    INSTRUCTION(adc, PRE_INDIRECT, 6, false), // 0x61
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x62
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x63
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x64
+    INSTRUCTION(adc, ZERO_PAGE, 3, false),    // 0x65
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x66
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x67
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x68
+    INSTRUCTION(adc, IMMEDIATE, 2, false),    // 0x69
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x6A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x6B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x6C
+    INSTRUCTION(adc, ABSOLUTE, 4, false),     // 0x6D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x6E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x6F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x70
+    INSTRUCTION(adc, POST_INDIRECT, 5, true), // 0x71
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x72
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x73
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x74
+    INSTRUCTION(adc, ZERO_X, 4, false),       // 0x75
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x76
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x77
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x78
+    INSTRUCTION(adc, ABS_Y, 4, true),         // 0x79
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x7A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x7B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x7C
+    INSTRUCTION(adc, ABS_X, 4, true),         // 0x7D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x7E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x7F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x80
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x81
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x82
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x83
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x84
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x85
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x86
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x87
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x88
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x89
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x8F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x90
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x91
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x92
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x93
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x94
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x95
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x96
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x97
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x98
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x99
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9A
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9B
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9C
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9D
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9E
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x9F
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xA9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAD
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAE
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xAF
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xB9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBD
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBE
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xBF
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xC9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCD
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCE
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xCF
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xD9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDD
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDE
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xDF
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xE9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xEA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xEB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xEC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xED
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xEE
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xEF
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF0
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF1
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF2
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF3
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF4
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF5
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF6
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF7
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF8
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xF9
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xFA
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xFB
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xFC
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xFD
+    INSTRUCTION(nop, IMPLIED, 2, false),      // 0xFE
 };
 
 int execute(cpu_t *cpu) {
     instruction_t i = INSTRUCTION_LOOKUP[*(cpu->mem + cpu->pc)];
     i.inst(cpu, get_oper_ptr(cpu, i.mode, i.check_boundary));
+    cpu->cycles += i.cycles;
 
     return 0;
 }
