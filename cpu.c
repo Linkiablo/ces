@@ -127,8 +127,7 @@ uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
     return cpu->mem + offset;
 }
 
-typedef void (*instruction_fn)(cpu_t *cpu, enum address_mode mode,
-                               bool check_boundary);
+typedef void (*instruction_fn)(cpu_t *cpu, uint8_t *oper_ptr);
 
 typedef struct instruction_t {
     instruction_fn inst;
@@ -153,16 +152,17 @@ typedef struct instruction_t {
 //     absolute,Y	ADC oper,Y	79	3	4*
 //     (indirect,X)	ADC (oper,X)	61	2	6
 //     (indirect),Y	ADC (oper),Y	71	2	5*
-void adc(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
-    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
+void adc(cpu_t *cpu, uint8_t *oper_ptr) {
+    // int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
+    int8_t oper = *oper_ptr;
 
     // carry works, because carry flag is the first bit
-    int16_t res = *oper + cpu->a + (cpu->p & FLAG_C);
+    int16_t res = oper + cpu->a + (cpu->p & FLAG_C);
 
     CHECK_FLAG_N(cpu, res);
     CHECK_FLAG_Z(cpu, res);
     CHECK_FLAG_C(cpu, res);
-    CHECK_FLAG_V(cpu, *oper, cpu->a, res);
+    CHECK_FLAG_V(cpu, oper, cpu->a, res);
 
     cpu->a = res & 0xFF;
 }
@@ -183,10 +183,11 @@ void adc(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
 //     absolute,Y	AND oper,Y	39	3	4*
 //     (indirect,X)	AND (oper,X)	21	2	6
 //     (indirect),Y	AND (oper),Y	31	2	5*
-void and (cpu_t * cpu, enum address_mode mode, bool check_boundary) {
-    int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
+void and (cpu_t * cpu, uint8_t *oper_ptr) {
+    // TODO: komisches clangd formatting?
+    int8_t oper = *oper_ptr;
 
-    int8_t res = *oper & cpu->a;
+    int8_t res = oper & cpu->a;
     CHECK_FLAG_N(cpu, res);
     CHECK_FLAG_Z(cpu, res);
 
@@ -206,7 +207,7 @@ void and (cpu_t * cpu, enum address_mode mode, bool check_boundary) {
 //     zeropage,X	ASL oper,X	16	2	6
 //     absolute		ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
-void asl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void asl(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BCC
 //
@@ -217,7 +218,7 @@ void asl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCC oper	90	2	2**
-void bcc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bcc(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BCS
 //
@@ -228,7 +229,7 @@ void bcc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BCS oper	B0	2	2**
-void bcs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bcs(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BEQ
 //
@@ -239,7 +240,7 @@ void bcs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BEQ oper	F0	2	2**
-void beq(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void beq(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BIT
 //
@@ -254,7 +255,7 @@ void beq(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     addressing	assembler	opc	bytes	cycles
 //     zeropage	BIT oper	24	2	3
 //     absolute	BIT oper	2C	3	4
-void bit(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bit(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BMI
 //
@@ -265,7 +266,7 @@ void bit(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BMI oper	30	2	2**
-void bmi(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bmi(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BNE
 //
@@ -276,7 +277,7 @@ void bmi(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BNE oper	D0	2	2**
-void bne(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bne(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BPL
 //
@@ -287,7 +288,7 @@ void bne(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BPL oper	10	2	2**
-void bpl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bpl(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BRK
 //
@@ -308,7 +309,7 @@ void bpl(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	BRK	00	1	7
-void brk(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void brk(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BVC
 //
@@ -319,7 +320,7 @@ void brk(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVC oper	50	2	2**
-void bvc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bvc(cpu_t *cpu, uint8_t *oper_ptr);
 
 // BVS
 //
@@ -330,7 +331,7 @@ void bvc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative	BVS oper	70	2	2**
-void bvs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void bvs(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CLC
 //
@@ -341,7 +342,7 @@ void bvs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	0	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLC	18	1	2
-void clc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void clc(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CLD
 //
@@ -352,7 +353,7 @@ void clc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	0	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLD	D8	1	2
-void cld(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void cld(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CLI
 //
@@ -363,7 +364,7 @@ void cld(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	0	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLI	58	1	2
-void cli(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void cli(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CLV
 //
@@ -374,7 +375,7 @@ void cli(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	0
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLV	B8	1	2
-void clv(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void clv(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CMP
 //
@@ -392,7 +393,7 @@ void clv(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     absolute,Y	CMP oper,Y	D9	3	4*
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
-void cmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void cmp(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CPX
 //
@@ -405,7 +406,7 @@ void cmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     immediate	CPX #oper	E0	2	2
 //     zeropage	CPX oper	E4	2	3
 //     absolute	CPX oper	EC	3	4
-void cpx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void cpx(cpu_t *cpu, uint8_t *oper_ptr);
 
 // CPY
 //
@@ -418,7 +419,7 @@ void cpx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     immediate	CPY #oper	C0	2	2
 //     zeropage	CPY oper	C4	2	3
 //     absolute	CPY oper	CC	3	4
-void cpy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void cpy(cpu_t *cpu, uint8_t *oper_ptr);
 
 // DEC
 //
@@ -432,7 +433,7 @@ void cpy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	DEC oper,X	D6	2	6
 //     absolute	DEC oper	CE	3	6
 //     absolute,X	DEC oper,X	DE	3	7
-void dec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void dec(cpu_t *cpu, uint8_t *oper_ptr);
 
 // DEX
 //
@@ -443,7 +444,7 @@ void dec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEX	CA	1	2
-void dex(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void dex(cpu_t *cpu, uint8_t *oper_ptr);
 
 // DEY
 //
@@ -454,7 +455,7 @@ void dex(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	DEY	88	1	2
-void dey(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void dey(cpu_t *cpu, uint8_t *oper_ptr);
 
 // EOR
 //
@@ -472,7 +473,7 @@ void dey(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     absolute,Y	EOR oper,Y	59	3	4*
 //     (indirect,X)	EOR (oper,X)	41	2	6
 //     (indirect),Y	EOR (oper),Y	51	2	5*
-void eor(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void eor(cpu_t *cpu, uint8_t *oper_ptr);
 
 // INC
 //
@@ -486,7 +487,7 @@ void eor(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	INC oper,X	F6	2	6
 //     absolute	INC oper	EE	3	6
 //     absolute,X	INC oper,X	FE	3	7
-void inc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void inc(cpu_t *cpu, uint8_t *oper_ptr);
 
 // INX
 //
@@ -497,7 +498,7 @@ void inc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INX	E8	1	2
-void inx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void inx(cpu_t *cpu, uint8_t *oper_ptr);
 
 // INY
 //
@@ -508,7 +509,7 @@ void inx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	INY	C8	1	2
-void iny(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void iny(cpu_t *cpu, uint8_t *oper_ptr);
 
 // JMP
 //
@@ -521,7 +522,7 @@ void iny(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JMP oper	4C	3	3
 //     indirect	JMP (oper)	6C	3	5
-void jmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void jmp(cpu_t *cpu, uint8_t *oper_ptr);
 
 // JSR
 //
@@ -534,7 +535,7 @@ void jmp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     absolute	JSR oper	20	3	6
-void jsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void jsr(cpu_t *cpu, uint8_t *oper_ptr);
 
 // LDA
 //
@@ -552,7 +553,7 @@ void jsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     absolute,Y	LDA oper,Y	B9	3	4*
 //     (indirect,X)	LDA (oper,X)	A1	2	6
 //     (indirect),Y	LDA (oper),Y	B1	2	5*
-void lda(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void lda(cpu_t *cpu, uint8_t *oper_ptr);
 
 // LDX
 //
@@ -567,7 +568,7 @@ void lda(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,Y	LDX oper,Y	B6	2	4
 //     absolute	LDX oper	AE	3	4
 //     absolute,Y	LDX oper,Y	BE	3	4*
-void ldx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void ldx(cpu_t *cpu, uint8_t *oper_ptr);
 
 // LDY
 //
@@ -582,7 +583,7 @@ void ldx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	LDY oper,X	B4	2	4
 //     absolute	LDY oper	AC	3	4
 //     absolute,X	LDY oper,X	BC	3	4*
-void ldy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void ldy(cpu_t *cpu, uint8_t *oper_ptr);
 
 // LSR
 //
@@ -597,7 +598,7 @@ void ldy(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	LSR oper,X	56	2	6
 //     absolute	LSR oper	4E	3	6
 //     absolute,X	LSR oper,X	5E	3	7
-void lsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void lsr(cpu_t *cpu, uint8_t *oper_ptr);
 
 // NOP
 //
@@ -608,7 +609,7 @@ void lsr(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		NOP		EA	1	2
-void nop(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
+void nop(cpu_t *cpu, uint8_t *oper_ptr) {
     cpu->cycles += 2;
 }
 
@@ -628,7 +629,7 @@ void nop(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
 //     absolute,Y	ORA oper,Y	19	3	4*
 //     (indirect,X)	ORA (oper,X)	01	2	6
 //     (indirect),Y	ORA (oper),Y	11	2	5*
-void ora(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void ora(cpu_t *cpu, uint8_t *oper_ptr);
 
 // PHA
 //
@@ -639,7 +640,7 @@ void ora(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHA	48	1	3
-void pha(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void pha(cpu_t *cpu, uint8_t *oper_ptr);
 
 // PHP
 //
@@ -653,7 +654,7 @@ void pha(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PHP	08	1	3
-void php(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void php(cpu_t *cpu, uint8_t *oper_ptr);
 
 // PLA
 //
@@ -664,7 +665,7 @@ void php(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLA	68	1	4
-void pla(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void pla(cpu_t *cpu, uint8_t *oper_ptr);
 
 // PLP
 //
@@ -678,7 +679,7 @@ void pla(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	PLP	28	1	4
-void plp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void plp(cpu_t *cpu, uint8_t *oper_ptr);
 
 // ROL
 //
@@ -693,7 +694,7 @@ void plp(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	ROL oper,X	36	2	6
 //     absolute	ROL oper	2E	3	6
 //     absolute,X	ROL oper,X	3E	3	7
-void rol(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void rol(cpu_t *cpu, uint8_t *oper_ptr);
 
 // ROR
 //
@@ -708,7 +709,7 @@ void rol(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage,X	ROR oper,X	76	2	6
 //     absolute	ROR oper	6E	3	6
 //     absolute,X	ROR oper,X	7E	3	7
-void ror(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void ror(cpu_t *cpu, uint8_t *oper_ptr);
 
 // RTI
 //
@@ -722,7 +723,7 @@ void ror(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTI	40	1	6
-void rti(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void rti(cpu_t *cpu, uint8_t *oper_ptr);
 
 // RTS
 //
@@ -733,7 +734,7 @@ void rti(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	RTS	60	1	6
-void rts(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void rts(cpu_t *cpu, uint8_t *oper_ptr);
 
 // SBC
 //
@@ -751,7 +752,7 @@ void rts(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     absolute,Y	SBC oper,Y	F9	3	4*
 //     (indirect,X)	SBC (oper,X)	E1	2	6
 //     (indirect),Y	SBC (oper),Y	F1	2	5*
-void sbc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sbc(cpu_t *cpu, uint8_t *oper_ptr);
 
 // SEC
 //
@@ -762,7 +763,7 @@ void sbc(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	1	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEC	38	1	2
-void sec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sec(cpu_t *cpu, uint8_t *oper_ptr);
 
 // SED
 //
@@ -773,7 +774,7 @@ void sec(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	1	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SED	F8	1	2
-void sed(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sed(cpu_t *cpu, uint8_t *oper_ptr);
 
 // SEI
 //
@@ -784,7 +785,7 @@ void sed(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	SEI	78	1	2
-void sei(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sei(cpu_t *cpu, uint8_t *oper_ptr);
 
 // STA
 //
@@ -801,7 +802,7 @@ void sei(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     absolute,Y	STA oper,Y	99	3	5
 //     (indirect,X)	STA (oper,X)	81	2	6
 //     (indirect),Y	STA (oper),Y	91	2	6
-void sta(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sta(cpu_t *cpu, uint8_t *oper_ptr);
 
 // STX
 //
@@ -814,7 +815,7 @@ void sta(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage	STX oper	86	2	3
 //     zeropage,Y	STX oper,Y	96	2	4
 //     absolute	STX oper	8E	3	4
-void stx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void stx(cpu_t *cpu, uint8_t *oper_ptr);
 
 // STY
 //
@@ -827,7 +828,7 @@ void stx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     zeropage	STY oper	84	2	3
 //     zeropage,X	STY oper,X	94	2	4
 //     absolute	STY oper	8C	3	4
-void sty(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void sty(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TAX
 //
@@ -838,7 +839,7 @@ void sty(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAX	AA	1	2
-void tax(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void tax(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TAY
 //
@@ -849,7 +850,7 @@ void tax(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TAY	A8	1	2
-void tay(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void tay(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TSX
 //
@@ -860,7 +861,7 @@ void tay(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TSX	BA	1	2
-void tsx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void tsx(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TXA
 //
@@ -871,7 +872,7 @@ void tsx(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXA	8A	1	2
-void txa(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void txa(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TXS
 //
@@ -882,7 +883,7 @@ void txa(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TXS	9A	1	2
-void txs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void txs(cpu_t *cpu, uint8_t *oper_ptr);
 
 // TYA
 //
@@ -893,7 +894,7 @@ void txs(cpu_t *cpu, enum address_mode mode, bool check_boundary);
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	TYA	98	1	82
-void tya(cpu_t *cpu, enum address_mode mode, bool check_boundary);
+void tya(cpu_t *cpu, uint8_t *oper_ptr);
 
 instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
     INSTRUCTION(nop, IMPLIED, 2, false), INSTRUCTION(nop, IMPLIED, 2, false),
@@ -1028,7 +1029,7 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
 
 int execute(cpu_t *cpu) {
     instruction_t i = INSTRUCTION_LOOKUP[*(cpu->mem + cpu->pc)];
-    i.inst(cpu, i.mode, i.check_boundary);
+    i.inst(cpu, get_oper_ptr(cpu, i.mode, i.check_boundary));
 
     return 0;
 }
