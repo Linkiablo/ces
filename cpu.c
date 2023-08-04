@@ -13,7 +13,7 @@
 
 #define CHECK_FLAG_N(cpu, res) SET_FLAG(cpu, FLAG_N, ((res & 128) != 0))
 #define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, ((res & 0xFF00) != 0))
-// don't account for carry / oveflow
+// don't account for carry / overflow
 #define CHECK_FLAG_Z(cpu, res) SET_FLAG(cpu, FLAG_Z, ((res & 0xFF) == 0))
 // v flag:
 // https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
@@ -25,10 +25,7 @@
     { .inst = i, .mode = m, .cycles = c, .check_boundary = cb }
 
 /* private method because of possible undefined order of operations */
-uint8_t _read_8(cpu_t *cpu) {
-    uint16_t new_pc = ++(cpu->pc);
-    return cpu->mem[new_pc];
-}
+static uint8_t _read_8(cpu_t *cpu) { return cpu->mem[cpu->pc++]; }
 
 void init_cpu(cpu_t *cpu, size_t mem_size) {
     memset(cpu, 0, sizeof(cpu_t));
@@ -69,7 +66,8 @@ enum address_mode {
     RELATIVE
 };
 
-uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
+static uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode,
+                             bool check_boundary) {
     uint16_t offset = 0;
 
     switch (mode) {
@@ -79,7 +77,8 @@ uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
     case IMMEDIATE:
         // increment PC
         READ_8(cpu);
-        offset = cpu->pc;
+        // -1 because pc points at next instruction
+        offset = cpu->pc - 1;
         break;
     case ABSOLUTE:
         offset = READ_16(cpu);
@@ -115,7 +114,7 @@ uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
         break;
     case RELATIVE:;
         int8_t offset_rel = READ_8(cpu);
-        offset = cpu->pc + 1 + offset_rel; // +1 because pc points to next instruction
+        offset = cpu->pc + offset_rel;
         break;
     default:
         fprintf(stderr, "ERROR: unknown address mode!");
@@ -1164,7 +1163,7 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
 };
 
 int execute(cpu_t *cpu) {
-    instruction_t i = INSTRUCTION_LOOKUP[*(cpu->mem + cpu->pc)];
+    instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
     i.inst(cpu, get_oper_ptr(cpu, i.mode, i.check_boundary));
     cpu->cycles += i.cycles;
 
