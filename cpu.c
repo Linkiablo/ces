@@ -11,9 +11,10 @@
 #define SET_FLAG(cpu, flag, cond)                                              \
     (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
 
-#define CHECK_FLAG_N(cpu, res) SET_FLAG(cpu, FLAG_N, res < 0)
-#define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, (res & 0xFF00) != 0)
-#define CHECK_FLAG_Z(cpu, res) SET_FLAG(cpu, FLAG_Z, res == 0)
+#define CHECK_FLAG_N(cpu, res) SET_FLAG(cpu, FLAG_N, ((res & 128) != 0))
+#define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, ((res & 0xFF00) != 0))
+// don't account for carry / oveflow
+#define CHECK_FLAG_Z(cpu, res) SET_FLAG(cpu, FLAG_Z, ((res & 0xFF) == 0))
 // v flag:
 // https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
 // M = *oper, N = cpu->a
@@ -112,8 +113,12 @@ uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode, bool check_boundary) {
         void *yz_addr = cpu->mem + READ_8(cpu); // Y_ZERO
         offset = LOAD_16(yz_addr) + cpu->y;
         break;
+    case RELATIVE:;
+        int8_t offset_rel = READ_8(cpu);
+        offset = cpu->pc + 1 + offset_rel; // +1 because pc points to next instruction
+        break;
     default:
-        fprintf(stderr, "ERROR: unknown address mode for operation!");
+        fprintf(stderr, "ERROR: unknown address mode!");
         exit(1);
     }
 
@@ -207,7 +212,13 @@ void and (cpu_t * cpu, uint8_t *oper_ptr) {
 //     zeropage,X	ASL oper,X	16	2	6
 //     absolute		ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
-void asl(cpu_t *cpu, uint8_t *oper_ptr);
+void asl(cpu_t *cpu, uint8_t *oper_ptr) {
+    *oper_ptr <<= 1;
+
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
+    CHECK_FLAG_C(cpu, *oper_ptr);
+}
 
 // BCC
 //
@@ -609,7 +620,7 @@ void lsr(cpu_t *cpu, uint8_t *oper_ptr);
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		NOP		EA	1	2
-void nop(cpu_t *cpu, uint8_t *oper_ptr) { cpu->cycles += 2; }
+void nop(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // ORA
 //
@@ -905,7 +916,7 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x07
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x08
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x09
-    INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0A
+    INSTRUCTION(asl, ACCUMULATOR, 2, false),  // 0x0A
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0B
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0C
     INSTRUCTION(nop, IMPLIED, 2, false),      // 0x0D

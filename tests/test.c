@@ -205,6 +205,26 @@ void test_adc_post_ind() {
     LOG("test_adc_post successfull");
 }
 
+void test_asl_acc() {
+    LOG("running test_asl_acc");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    uint8_t program[1] = {0x0A};
+    cpu.a = 127;
+
+    load_program(&cpu, program, 1);
+
+    execute(&cpu);
+
+    assert(cpu.cycles == 2);
+    assert(cpu.a == -2);
+    assert(cpu.p == FLAG_N);
+
+    destroy_cpu(&cpu);
+    LOG("test_asl_acc successfull");
+}
+
 void test_v_flag() {
     LOG("running test_v_flag");
     cpu_t cpu;
@@ -230,7 +250,7 @@ void test_v_flag() {
     execute(&cpu);
     assert(cpu.a == -96);
     // overflow flag
-    assert(cpu.p == (FLAG_V));
+    assert(cpu.p == (FLAG_V | FLAG_N));
 
     destroy_cpu(&cpu);
     LOG("test_v_flag successfull");
@@ -246,5 +266,6 @@ int main() {
     test_adc_abs_y();
     test_adc_pre_ind();
     test_adc_post_ind();
+    test_asl_acc();
     return 0;
 }
