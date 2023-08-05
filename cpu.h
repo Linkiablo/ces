@@ -2,9 +2,7 @@
 #define CPU_H
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define FLAG_N 128 // 0b10000000
 #define FLAG_V 64  // 0b01000000

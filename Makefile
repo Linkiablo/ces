@@ -8,7 +8,7 @@ OBJS := main.o cpu.o
 
 TEST_OBJS := cpu.o tests/test.o
 
-all: ces
+all: ces test
 
 ces: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)

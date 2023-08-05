@@ -1,6 +1,9 @@
 #include "cpu.h"
+
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #define BASE_STACK_OFFSET 0x01FF
 #define NMI_OFFSET 0xFFFA
