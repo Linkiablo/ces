@@ -8,6 +8,8 @@
 #define LOAD_8(addr) (*((uint8_t *)addr))
 #define LOAD_16(addr) (LOAD_8(addr) | (LOAD_8(addr + 1) << 8))
 
+#define IS_FLAG_SET(cpu, flag) ((cpu->p & flag) != 0)
+
 #define SET_FLAG(cpu, flag, cond)                                              \
     (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
 
@@ -113,6 +115,8 @@ static uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode,
         offset = LOAD_16(yz_addr) + cpu->y;
         break;
     case RELATIVE:;
+        // returns mem start address + offset to calculate page boundary
+        // crossing to get the new pc subtract mem start address
         int8_t offset_rel = READ_8(cpu);
         offset = cpu->pc + offset_rel;
         break;
@@ -227,8 +231,13 @@ void asl(cpu_t *cpu, uint8_t *oper_ptr) {
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BCC oper	90	2	2**
-void bcc(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BCC oper	90	2	2**
+void bcc(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (!(IS_FLAG_SET(cpu, FLAG_C))) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BCS
 //
@@ -238,8 +247,13 @@ void bcc(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BCS oper	B0	2	2**
-void bcs(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BCS oper	B0	2	2**
+void bcs(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (IS_FLAG_SET(cpu, FLAG_C)) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BEQ
 //
@@ -249,8 +263,13 @@ void bcs(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BEQ oper	F0	2	2**
-void beq(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BEQ oper	F0	2	2**
+void beq(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (IS_FLAG_SET(cpu, FLAG_Z)) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BIT
 //
@@ -263,9 +282,18 @@ void beq(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     M7	+	-	-	-	M6
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	BIT oper	24	2	3
-//     absolute	BIT oper	2C	3	4
-void bit(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     zeropage		BIT oper	24	2	3
+//     absolute		BIT oper	2C	3	4
+void bit(cpu_t *cpu, uint8_t *oper_ptr) {
+	uint8_t oper = *oper_ptr;
+	// M7
+	SET_FLAG(cpu, FLAG_N, ((oper & FLAG_N) != 0));
+	// M6
+	SET_FLAG(cpu, FLAG_V, ((oper & FLAG_V) != 0));
+	
+	uint8_t res = cpu->a & oper;
+	CHECK_FLAG_Z(cpu, res);
+}
 
 // BMI
 //
@@ -275,7 +303,7 @@ void bit(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BMI oper	30	2	2**
+//     relative		BMI oper	30	2	2**
 void bmi(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // BNE

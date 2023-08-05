@@ -256,6 +256,33 @@ void test_v_flag() {
     LOG("test_v_flag successfull");
 }
 
+void test_branch_extra_cycle() {
+    LOG("running test_branch_extra_cycle");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    // take branch beq (FLAG_Z is set) to adc (0x69)
+    uint8_t program2[6] = {0xF0, 0x02, 0x00, 0x00, 0x69, 80};
+    cpu.p |= FLAG_Z;
+    assert(cpu.p == FLAG_Z);
+
+    load_program(&cpu, program2, 6);
+
+    execute(&cpu);
+    assert(cpu.pc == 4);
+    // 2 + 1 (branch taken, no page boundary crossed)
+    assert(cpu.cycles == 3);
+
+    // execute adc
+    execute(&cpu);
+
+    assert(cpu.a == 80);
+    assert(cpu.cycles == 5);
+
+    destroy_cpu(&cpu);
+    LOG("test_branch_extra_cycle successfull");
+}
+
 int main() {
     test_adc_immediate();
     test_adc_zeropage();
@@ -267,5 +294,6 @@ int main() {
     test_adc_pre_ind();
     test_adc_post_ind();
     test_asl_acc();
+    test_branch_extra_cycle();
     return 0;
 }
