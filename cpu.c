@@ -2,11 +2,25 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#define BASE_STACK_OFFSET 0x01FF
+#define NMI_OFFSET 0xFFFA
+#define IRQ_OFFSET 0xFFFE
+
 #define READ_8(cpu) (_read_8(cpu))
 #define READ_16(cpu) (READ_8(cpu) | (READ_8(cpu) << 8))
 
 #define LOAD_8(addr) (*((uint8_t *)addr))
 #define LOAD_16(addr) (LOAD_8(addr) | (LOAD_8(addr + 1) << 8))
+
+/* push byte to current sp and increase sp */
+#define PUSH_8(cpu, val) *(cpu->mem + BASE_STACK_OFFSET - (cpu->sp++)) = val;
+/* decrease sp and read byte */
+#define POP_8(cpu) _pop_8(cpu)
+
+#define PUSH_16(cpu, val)                                                      \
+    PUSH_8(cpu, (val >> 8));                                                   \
+    PUSH_8(cpu, (val & 0xFF));
+#define POP_16(cpu) POP_8(cpu) | POP_8(cpu) << 8
 
 #define IS_FLAG_SET(cpu, flag) ((cpu->p & flag) != 0)
 
@@ -26,13 +40,15 @@
 #define INSTRUCTION(i, m, c, cb)                                               \
     { .inst = i, .mode = m, .cycles = c, .check_boundary = cb }
 
-/* private method because of possible undefined order of operations */
+/* private methods because of possible undefined order of operations */
 static uint8_t _read_8(cpu_t *cpu) { return cpu->mem[cpu->pc++]; }
+static uint8_t _pop_8(cpu_t *cpu) {
+    return cpu->mem[BASE_STACK_OFFSET - (--cpu->sp)];
+}
 
 void init_cpu(cpu_t *cpu, size_t mem_size) {
     memset(cpu, 0, sizeof(cpu_t));
 
-    // TODO: min size?
     /* PC 16 bit wide */
     assert(mem_size <= UINT16_MAX);
     cpu->mem_size = mem_size;
@@ -42,8 +58,6 @@ void init_cpu(cpu_t *cpu, size_t mem_size) {
         fprintf(stderr, "ERROR: could not allocate %ld bytes for cpu memory!",
                 mem_size);
     }
-
-    // TODO: stack pointer init
 }
 
 void destroy_cpu(cpu_t *cpu) { free(cpu->mem); }
@@ -161,7 +175,6 @@ typedef struct instruction_t {
 //     (indirect,X)	ADC (oper,X)	61	2	6
 //     (indirect),Y	ADC (oper),Y	71	2	5*
 void adc(cpu_t *cpu, uint8_t *oper_ptr) {
-    // int8_t *oper = (int8_t *)get_oper_ptr(cpu, mode, check_boundary);
     int8_t oper = *oper_ptr;
 
     // carry works, because carry flag is the first bit
@@ -193,13 +206,10 @@ void adc(cpu_t *cpu, uint8_t *oper_ptr) {
 //     (indirect),Y	AND (oper),Y	31	2	5*
 void and (cpu_t * cpu, uint8_t *oper_ptr) {
     // TODO: komisches clangd formatting?
-    int8_t oper = *oper_ptr;
 
-    int8_t res = oper & cpu->a;
-    CHECK_FLAG_N(cpu, res);
-    CHECK_FLAG_Z(cpu, res);
-
-    cpu->a = res;
+    cpu->a &= *oper_ptr;
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
 }
 
 // ASL
@@ -216,11 +226,12 @@ void and (cpu_t * cpu, uint8_t *oper_ptr) {
 //     absolute		ASL oper	0E	3	6
 //     absolute,X	ASL oper,X	1E	3	7
 void asl(cpu_t *cpu, uint8_t *oper_ptr) {
+    SET_FLAG(cpu, FLAG_C, (*oper_ptr & 1 << 7) != 0);
+
     *oper_ptr <<= 1;
 
     CHECK_FLAG_N(cpu, *oper_ptr);
     CHECK_FLAG_Z(cpu, *oper_ptr);
-    CHECK_FLAG_C(cpu, *oper_ptr);
 }
 
 // BCC
@@ -285,14 +296,14 @@ void beq(cpu_t *cpu, uint8_t *oper_ptr) {
 //     zeropage		BIT oper	24	2	3
 //     absolute		BIT oper	2C	3	4
 void bit(cpu_t *cpu, uint8_t *oper_ptr) {
-	uint8_t oper = *oper_ptr;
-	// M7
-	SET_FLAG(cpu, FLAG_N, ((oper & FLAG_N) != 0));
-	// M6
-	SET_FLAG(cpu, FLAG_V, ((oper & FLAG_V) != 0));
-	
-	uint8_t res = cpu->a & oper;
-	CHECK_FLAG_Z(cpu, res);
+    uint8_t oper = *oper_ptr;
+    // M7
+    SET_FLAG(cpu, FLAG_N, ((oper & FLAG_N) != 0));
+    // M6
+    SET_FLAG(cpu, FLAG_V, ((oper & FLAG_V) != 0));
+
+    uint8_t res = cpu->a & oper;
+    CHECK_FLAG_Z(cpu, res);
 }
 
 // BMI
@@ -304,7 +315,12 @@ void bit(cpu_t *cpu, uint8_t *oper_ptr) {
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     relative		BMI oper	30	2	2**
-void bmi(cpu_t *cpu, uint8_t *oper_ptr) {}
+void bmi(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (IS_FLAG_SET(cpu, FLAG_N)) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BNE
 //
@@ -314,8 +330,13 @@ void bmi(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BNE oper	D0	2	2**
-void bne(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BNE oper	D0	2	2**
+void bne(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (!(IS_FLAG_SET(cpu, FLAG_Z))) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BPL
 //
@@ -325,8 +346,13 @@ void bne(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BPL oper	10	2	2**
-void bpl(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BPL oper	10	2	2**
+void bpl(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (!(IS_FLAG_SET(cpu, FLAG_N))) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BRK
 //
@@ -346,8 +372,17 @@ void bpl(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	BRK	00	1	7
-void brk(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		BRK		00	1	7
+void brk(cpu_t *cpu, uint8_t *oper_ptr) {
+    // +1 because pc was increased after reading the opcode
+    PUSH_16(cpu, (cpu->pc + 1));
+    PUSH_8(cpu, ((cpu->p) | FLAG_B));
+
+    SET_FLAG(cpu, FLAG_I, true);
+    SET_FLAG(cpu, FLAG_B, true);
+
+    cpu->pc = IRQ_OFFSET;
+}
 
 // BVC
 //
@@ -357,8 +392,13 @@ void brk(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BVC oper	50	2	2**
-void bvc(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BVC oper	50	2	2**
+void bvc(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (!(IS_FLAG_SET(cpu, FLAG_V))) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // BVS
 //
@@ -368,8 +408,13 @@ void bvc(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     relative	BVS oper	70	2	2**
-void bvs(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     relative		BVS oper	70	2	2**
+void bvs(cpu_t *cpu, uint8_t *oper_ptr) {
+    if (IS_FLAG_SET(cpu, FLAG_V)) {
+        cpu->cycles += 1;
+        cpu->pc = oper_ptr - cpu->mem;
+    }
+}
 
 // CLC
 //
@@ -379,8 +424,8 @@ void bvs(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	0	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	CLC	18	1	2
-void clc(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		CLC		18	1	2
+void clc(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_C); }
 
 // CLD
 //
@@ -391,7 +436,7 @@ void clc(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     -	-	-	-	0	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLD	D8	1	2
-void cld(cpu_t *cpu, uint8_t *oper_ptr) {}
+void cld(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_D); }
 
 // CLI
 //
@@ -402,7 +447,7 @@ void cld(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     -	-	-	0	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLI	58	1	2
-void cli(cpu_t *cpu, uint8_t *oper_ptr) {}
+void cli(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_I); }
 
 // CLV
 //
@@ -413,25 +458,52 @@ void cli(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     -	-	-	-	-	0
 //     addressing	assembler	opc	bytes	cycles
 //     implied	CLV	B8	1	2
-void clv(cpu_t *cpu, uint8_t *oper_ptr) {}
+void clv(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_V); }
 
 // CMP
 //
 //     Compare Memory with Accumulator
+//
+//     Compare Instruction results:
+//     Relation R − Op		Z	C	N
+//     ___________________________________________________________
+//     Register < Operand	0	0	sign bit of result
+//     Register = Operand	1	1	0
+//     Register > Operand	0	1	sign bit of result
 //
 //     A - M
 //     N	Z	C	I	D	V
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	CMP #oper	C9	2	2
-//     zeropage	CMP oper	C5	2	3
+//     zeropage		CMP oper	C5	2	3
 //     zeropage,X	CMP oper,X	D5	2	4
-//     absolute	CMP oper	CD	3	4
+//     absolute		CMP oper	CD	3	4
 //     absolute,X	CMP oper,X	DD	3	4*
 //     absolute,Y	CMP oper,Y	D9	3	4*
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
-void cmp(cpu_t *cpu, uint8_t *oper_ptr) {}
+void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
+    int8_t oper = *oper_ptr;
+
+    int8_t res = (cpu->a) - oper;
+
+    if ((cpu->a) < oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
+        CHECK_FLAG_N(cpu, res);
+    }
+
+    if ((cpu->a) == oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
+        SET_FLAG(cpu, FLAG_N, false);
+    }
+
+    if ((cpu->a) > oper) {
+        SET_FLAG(cpu, FLAG_Z, false);
+        SET_FLAG(cpu, FLAG_C, true);
+        CHECK_FLAG_N(cpu, res);
+    }
+}
 
 // CPX
 //
@@ -442,9 +514,29 @@ void cmp(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	CPX #oper	E0	2	2
-//     zeropage	CPX oper	E4	2	3
-//     absolute	CPX oper	EC	3	4
-void cpx(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     zeropage		CPX oper	E4	2	3
+//     absolute		CPX oper	EC	3	4
+void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
+    int8_t oper = *oper_ptr;
+
+    int8_t res = (cpu->x) - oper;
+
+    if ((cpu->x) < oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
+        CHECK_FLAG_N(cpu, res);
+    }
+
+    if ((cpu->x) == oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
+        SET_FLAG(cpu, FLAG_N, false);
+    }
+
+    if ((cpu->x) > oper) {
+        SET_FLAG(cpu, FLAG_Z, false);
+        SET_FLAG(cpu, FLAG_C, true);
+        CHECK_FLAG_N(cpu, res);
+    }
+}
 
 // CPY
 //
@@ -455,9 +547,29 @@ void cpx(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	CPY #oper	C0	2	2
-//     zeropage	CPY oper	C4	2	3
-//     absolute	CPY oper	CC	3	4
-void cpy(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     zeropage		CPY oper	C4	2	3
+//     absolute		CPY oper	CC	3	4
+void cpy(cpu_t *cpu, uint8_t *oper_ptr) {
+    int8_t oper = *oper_ptr;
+
+    int8_t res = (cpu->y) - oper;
+
+    if ((cpu->y) < oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
+        CHECK_FLAG_N(cpu, res);
+    }
+
+    if ((cpu->y) == oper) {
+        SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
+        SET_FLAG(cpu, FLAG_N, false);
+    }
+
+    if ((cpu->y) > oper) {
+        SET_FLAG(cpu, FLAG_Z, false);
+        SET_FLAG(cpu, FLAG_C, true);
+        CHECK_FLAG_N(cpu, res);
+    }
+}
 
 // DEC
 //
@@ -467,11 +579,15 @@ void cpy(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	DEC oper	C6	2	5
+//     zeropage		DEC oper	C6	2	5
 //     zeropage,X	DEC oper,X	D6	2	6
-//     absolute	DEC oper	CE	3	6
+//     absolute		DEC oper	CE	3	6
 //     absolute,X	DEC oper,X	DE	3	7
-void dec(cpu_t *cpu, uint8_t *oper_ptr) {}
+void dec(cpu_t *cpu, uint8_t *oper_ptr) {
+    *oper_ptr -= 1;
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
+}
 
 // DEX
 //
@@ -481,8 +597,12 @@ void dec(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	DEX	CA	1	2
-void dex(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		DEX	CA	1	2
+void dex(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->x -= 1;
+    CHECK_FLAG_N(cpu, cpu->x);
+    CHECK_FLAG_Z(cpu, cpu->x);
+}
 
 // DEY
 //
@@ -492,8 +612,12 @@ void dex(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	DEY	88	1	2
-void dey(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		DEY	88	1	2
+void dey(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->y -= 1;
+    CHECK_FLAG_N(cpu, cpu->y);
+    CHECK_FLAG_Z(cpu, cpu->y);
+}
 
 // EOR
 //
@@ -504,14 +628,19 @@ void dey(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	EOR #oper	49	2	2
-//     zeropage	EOR oper	45	2	3
+//     zeropage		EOR oper	45	2	3
 //     zeropage,X	EOR oper,X	55	2	4
-//     absolute	EOR oper	4D	3	4
+//     absolute		EOR oper	4D	3	4
 //     absolute,X	EOR oper,X	5D	3	4*
 //     absolute,Y	EOR oper,Y	59	3	4*
 //     (indirect,X)	EOR (oper,X)	41	2	6
 //     (indirect),Y	EOR (oper),Y	51	2	5*
-void eor(cpu_t *cpu, uint8_t *oper_ptr) {}
+void eor(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a ^= *oper_ptr;
+
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 // INC
 //
@@ -521,11 +650,16 @@ void eor(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	INC oper	E6	2	5
+//     zeropage		INC oper	E6	2	5
 //     zeropage,X	INC oper,X	F6	2	6
-//     absolute	INC oper	EE	3	6
+//     absolute		INC oper	EE	3	6
 //     absolute,X	INC oper,X	FE	3	7
-void inc(cpu_t *cpu, uint8_t *oper_ptr) {}
+void inc(cpu_t *cpu, uint8_t *oper_ptr) {
+    *oper_ptr += 1;
+
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
+}
 
 // INX
 //
@@ -535,8 +669,13 @@ void inc(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	INX	E8	1	2
-void inx(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		INX		E8	1	2
+void inx(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->x += 1;
+
+    CHECK_FLAG_N(cpu, cpu->x);
+    CHECK_FLAG_Z(cpu, cpu->x);
+}
 
 // INY
 //
@@ -546,8 +685,13 @@ void inx(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	INY	C8	1	2
-void iny(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		INY		C8	1	2
+void iny(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->y += 1;
+
+    CHECK_FLAG_N(cpu, cpu->y);
+    CHECK_FLAG_Z(cpu, cpu->y);
+}
 
 // JMP
 //
@@ -558,9 +702,9 @@ void iny(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     absolute	JMP oper	4C	3	3
-//     indirect	JMP (oper)	6C	3	5
-void jmp(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     absolute		JMP oper	4C	3	3
+//     indirect		JMP (oper)	6C	3	5
+void jmp(cpu_t *cpu, uint8_t *oper_ptr) { cpu->pc = LOAD_16(oper_ptr); }
 
 // JSR
 //
@@ -572,8 +716,12 @@ void jmp(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     absolute	JSR oper	20	3	6
-void jsr(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     absolute		JSR oper	20	3	6
+void jsr(cpu_t *cpu, uint8_t *oper_ptr) {
+    // already at pc + 2 because operand was read
+    PUSH_16(cpu, cpu->pc);
+    cpu->pc = LOAD_16(oper_ptr);
+}
 
 // LDA
 //
@@ -584,14 +732,19 @@ void jsr(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	LDA #oper	A9	2	2
-//     zeropage	LDA oper	A5	2	3
+//     zeropage		LDA oper	A5	2	3
 //     zeropage,X	LDA oper,X	B5	2	4
-//     absolute	LDA oper	AD	3	4
+//     absolute		LDA oper	AD	3	4
 //     absolute,X	LDA oper,X	BD	3	4*
 //     absolute,Y	LDA oper,Y	B9	3	4*
 //     (indirect,X)	LDA (oper,X)	A1	2	6
 //     (indirect),Y	LDA (oper),Y	B1	2	5*
-void lda(cpu_t *cpu, uint8_t *oper_ptr) {}
+void lda(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a = *oper_ptr;
+
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 // LDX
 //
@@ -602,11 +755,16 @@ void lda(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	LDX #oper	A2	2	2
-//     zeropage	LDX oper	A6	2	3
+//     zeropage		LDX oper	A6	2	3
 //     zeropage,Y	LDX oper,Y	B6	2	4
-//     absolute	LDX oper	AE	3	4
+//     absolute		LDX oper	AE	3	4
 //     absolute,Y	LDX oper,Y	BE	3	4*
-void ldx(cpu_t *cpu, uint8_t *oper_ptr) {}
+void ldx(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->x = *oper_ptr;
+
+    CHECK_FLAG_N(cpu, cpu->x);
+    CHECK_FLAG_Z(cpu, cpu->x);
+}
 
 // LDY
 //
@@ -617,11 +775,16 @@ void ldx(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	LDY #oper	A0	2	2
-//     zeropage	LDY oper	A4	2	3
+//     zeropage		LDY oper	A4	2	3
 //     zeropage,X	LDY oper,X	B4	2	4
-//     absolute	LDY oper	AC	3	4
+//     absolute		LDY oper	AC	3	4
 //     absolute,X	LDY oper,X	BC	3	4*
-void ldy(cpu_t *cpu, uint8_t *oper_ptr) {}
+void ldy(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->y = *oper_ptr;
+
+    CHECK_FLAG_N(cpu, cpu->y);
+    CHECK_FLAG_Z(cpu, cpu->y);
+}
 
 // LSR
 //
@@ -631,12 +794,19 @@ void ldy(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     0	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     accumulator	LSR A	4A	1	2
-//     zeropage	LSR oper	46	2	5
+//     accumulator	LSR A		4A	1	2
+//     zeropage		LSR oper	46	2	5
 //     zeropage,X	LSR oper,X	56	2	6
-//     absolute	LSR oper	4E	3	6
+//     absolute		LSR oper	4E	3	6
 //     absolute,X	LSR oper,X	5E	3	7
-void lsr(cpu_t *cpu, uint8_t *oper_ptr) {}
+void lsr(cpu_t *cpu, uint8_t *oper_ptr) {
+    SET_FLAG(cpu, FLAG_C, (*oper_ptr & 1));
+
+    *oper_ptr >>= 1;
+
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
+}
 
 // NOP
 //
@@ -658,14 +828,19 @@ void nop(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	ORA #oper	09	2	2
-//     zeropage	ORA oper	05	2	3
+//     zeropage		ORA oper	05	2	3
 //     zeropage,X	ORA oper,X	15	2	4
-//     absolute	ORA oper	0D	3	4
+//     absolute		ORA oper	0D	3	4
 //     absolute,X	ORA oper,X	1D	3	4*
 //     absolute,Y	ORA oper,Y	19	3	4*
 //     (indirect,X)	ORA (oper,X)	01	2	6
 //     (indirect),Y	ORA (oper),Y	11	2	5*
-void ora(cpu_t *cpu, uint8_t *oper_ptr) {}
+void ora(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a |= *oper_ptr;
+
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 // PHA
 //
@@ -675,8 +850,8 @@ void ora(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	PHA	48	1	3
-void pha(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		PHA		48	1	3
+void pha(cpu_t *cpu, uint8_t *oper_ptr) { PUSH_8(cpu, cpu->a); }
 
 // PHP
 //
@@ -689,8 +864,10 @@ void pha(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	PHP	08	1	3
-void php(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		PHP		08	1	3
+void php(cpu_t *cpu, uint8_t *oper_ptr) {
+    PUSH_8(cpu, (cpu->p | FLAG_B | 1 << 5));
+}
 
 // PLA
 //
@@ -700,8 +877,8 @@ void php(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	PLA	68	1	4
-void pla(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		PLA		68	1	4
+void pla(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = POP_8(cpu); }
 
 // PLP
 //
@@ -714,8 +891,10 @@ void pla(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
-//     implied	PLP	28	1	4
-void plp(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		PLP		28	1	4
+void plp(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->p = POP_8(cpu) | ~FLAG_B | ~(1 << 5);
+}
 
 // ROL
 //
@@ -725,12 +904,22 @@ void plp(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     accumulator	ROL A	2A	1	2
-//     zeropage	ROL oper	26	2	5
+//     accumulator	ROL A		2A	1	2
+//     zeropage		ROL oper	26	2	5
 //     zeropage,X	ROL oper,X	36	2	6
-//     absolute	ROL oper	2E	3	6
+//     absolute		ROL oper	2E	3	6
 //     absolute,X	ROL oper,X	3E	3	7
-void rol(cpu_t *cpu, uint8_t *oper_ptr) {}
+void rol(cpu_t *cpu, uint8_t *oper_ptr) {
+    uint16_t res = *oper_ptr;
+
+    res <<= 1;
+
+    // carry-in to bit 0
+    res |= IS_FLAG_SET(cpu, FLAG_C);
+    CHECK_FLAG_C(cpu, res);
+
+    *oper_ptr = res & 0xFF;
+}
 
 // ROR
 //
@@ -740,12 +929,23 @@ void rol(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	+	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     accumulator	ROR A	6A	1	2
-//     zeropage	ROR oper	66	2	5
+//     accumulator	ROR A		6A	1	2
+//     zeropage		ROR oper	66	2	5
 //     zeropage,X	ROR oper,X	76	2	6
-//     absolute	ROR oper	6E	3	6
+//     absolute		ROR oper	6E	3	6
 //     absolute,X	ROR oper,X	7E	3	7
-void ror(cpu_t *cpu, uint8_t *oper_ptr) {}
+void ror(cpu_t *cpu, uint8_t *oper_ptr) {
+    uint16_t res = *oper_ptr;
+
+    bool carry_out = res & FLAG_C;
+    res >>= 1;
+
+    // carry-in to bit 7
+    res |= (IS_FLAG_SET(cpu, FLAG_C) << 7);
+    SET_FLAG(cpu, FLAG_C, carry_out);
+
+    *oper_ptr = res & 0xFF;
+}
 
 // RTI
 //
@@ -758,8 +958,11 @@ void ror(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     from stack
 //     addressing	assembler	opc	bytes	cycles
-//     implied	RTI	40	1	6
-void rti(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		RTI		40	1	6
+void rti(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->p = POP_8(cpu) | ~FLAG_B | ~(1 << 5);
+    cpu->pc = POP_16(cpu);
+}
 
 // RTS
 //
@@ -769,8 +972,8 @@ void rti(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	RTS	60	1	6
-void rts(cpu_t *cpu, uint8_t *oper_ptr) {}
+//     implied		RTS		60	1	6
+void rts(cpu_t *cpu, uint8_t *oper_ptr) { cpu->pc = POP_16(cpu); }
 
 // SBC
 //
@@ -781,9 +984,9 @@ void rts(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     +	+	+	-	-	+
 //     addressing	assembler	opc	bytes	cycles
 //     immediate	SBC #oper	E9	2	2
-//     zeropage	SBC oper	E5	2	3
+//     zeropage		SBC oper	E5	2	3
 //     zeropage,X	SBC oper,X	F5	2	4
-//     absolute	SBC oper	ED	3	4
+//     absolute		SBC oper	ED	3	4
 //     absolute,X	SBC oper,X	FD	3	4*
 //     absolute,Y	SBC oper,Y	F9	3	4*
 //     (indirect,X)	SBC (oper,X)	E1	2	6
@@ -798,7 +1001,7 @@ void sbc(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	1	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	SEC	38	1	2
+//     implied		SEC		38	1	2
 void sec(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // SED
@@ -809,7 +1012,7 @@ void sec(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	1	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	SED	F8	1	2
+//     implied		SED		F8	1	2
 void sed(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // SEI
@@ -820,7 +1023,7 @@ void sed(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	1	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	SEI	78	1	2
+//     implied		SEI		78	1	2
 void sei(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // STA
@@ -831,9 +1034,9 @@ void sei(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	STA oper	85	2	3
+//     zeropage		STA oper	85	2	3
 //     zeropage,X	STA oper,X	95	2	4
-//     absolute	STA oper	8D	3	4
+//     absolute		STA oper	8D	3	4
 //     absolute,X	STA oper,X	9D	3	5
 //     absolute,Y	STA oper,Y	99	3	5
 //     (indirect,X)	STA (oper,X)	81	2	6
@@ -848,9 +1051,9 @@ void sta(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	STX oper	86	2	3
+//     zeropage		STX oper	86	2	3
 //     zeropage,Y	STX oper,Y	96	2	4
-//     absolute	STX oper	8E	3	4
+//     absolute		STX oper	8E	3	4
 void stx(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // STY
@@ -861,9 +1064,9 @@ void stx(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     zeropage	STY oper	84	2	3
+//     zeropage		STY oper	84	2	3
 //     zeropage,X	STY oper,X	94	2	4
-//     absolute	STY oper	8C	3	4
+//     absolute		STY oper	8C	3	4
 void sty(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TAX
@@ -874,7 +1077,7 @@ void sty(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TAX	AA	1	2
+//     implied		TAX		AA	1	2
 void tax(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TAY
@@ -885,7 +1088,7 @@ void tax(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TAY	A8	1	2
+//     implied		TAY		A8	1	2
 void tay(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TSX
@@ -896,7 +1099,7 @@ void tay(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TSX	BA	1	2
+//     implied		TSX		BA	1	2
 void tsx(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TXA
@@ -907,7 +1110,7 @@ void tsx(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TXA	8A	1	2
+//     implied		TXA		8A	1	2
 void txa(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TXS
@@ -918,7 +1121,7 @@ void txa(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     -	-	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TXS	9A	1	2
+//     implied		TXS		9A	1	2
 void txs(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 // TYA
@@ -929,7 +1132,7 @@ void txs(cpu_t *cpu, uint8_t *oper_ptr) {}
 //     N	Z	C	I	D	V
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
-//     implied	TYA	98	1	82
+//     implied		TYA		98	1	82
 void tya(cpu_t *cpu, uint8_t *oper_ptr) {}
 
 instruction_t const INSTRUCTION_LOOKUP[0xFF] = {

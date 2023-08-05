@@ -34,13 +34,13 @@ void test_adc_immediate() {
     assert(cpu.p == FLAG_Z);
 
     // adc immediate A: 0 + -1 = -1
-    uint8_t program3[2] = {0x69, -1};
+    uint8_t program3[2] = {0x69, -127};
     load_program(&cpu, program3, 2);
 
     cpu.pc = 0;
 
     execute(&cpu);
-    assert(cpu.a == -1);
+    assert(cpu.a == -127);
     // zero and carry flag
     assert(cpu.p == (FLAG_N | FLAG_C));
 
@@ -169,7 +169,7 @@ void test_adc_pre_ind() {
 
     uint8_t program[5] = {0x61, 1, 4, 0, 69};
     cpu.x = 1; // 1 + x = 2
-	       // $0003 -> $0004
+               // $0003 -> $0004
 
     load_program(&cpu, program, 5);
 
@@ -190,7 +190,7 @@ void test_adc_post_ind() {
 
     uint8_t program[5] = {0x71, 2, 1, 0, 69};
     cpu.y = 3; // $0002 -> 1
-	       // 1 + y = $0004
+               // 1 + y = $0004
 
     load_program(&cpu, program, 5);
 
@@ -283,6 +283,30 @@ void test_branch_extra_cycle() {
     LOG("test_branch_extra_cycle successfull");
 }
 
+#define BASE_STACK_OFFSET 0x01FF
+#define PUSH_8(cpu, val) *(cpu->mem + BASE_STACK_OFFSET - (cpu->sp++)) = val;
+#define POP_8(cpu) _pop_8(cpu)
+static uint8_t _pop_8(cpu_t *cpu) { return cpu->mem[BASE_STACK_OFFSET - (--cpu->sp)]; }
+
+#define PUSH_16(cpu, val) PUSH_8(cpu, (val >> 8)); PUSH_8(cpu, (val & 0xFF));
+#define POP_16(cpu) POP_8(cpu) | POP_8(cpu) << 8
+
+void test_stack_push_pop() {
+    LOG("running test_branch_extra_cycle");
+    cpu_t cpu;
+    init_cpu(&cpu, 0xFFFF);
+
+    uint16_t a = 0xAABB;
+    PUSH_16((&cpu), a);
+
+    uint16_t b = POP_16((&cpu));
+
+    assert(a == b);
+
+    destroy_cpu(&cpu);
+    LOG("test_branch_extra_cycle successfull");
+}
+
 int main() {
     test_adc_immediate();
     test_adc_zeropage();
@@ -295,5 +319,6 @@ int main() {
     test_adc_post_ind();
     test_asl_acc();
     test_branch_extra_cycle();
+    test_stack_push_pop();
     return 0;
 }
