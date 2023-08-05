@@ -1,0 +1,5 @@
+*.o
+doc/
+op_conversion/
+test
+ces
