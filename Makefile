@@ -1,19 +1,23 @@
 
 CC := gcc
 
-CFLAGS := -Wall -Wextra -Wpedantic -ggdb -fsanitize=address -fsanitize=leak -Wno-unused-parameter
+CFLAGS := -Wall -Wextra -Wpedantic -ggdb3 -DDEBUG#-fsanitize=address -fsanitize=leak -Wno-unused-parameter -DDEBUG
 LIBS := 
 
 OBJS := main.o cpu.o
 
 TEST_OBJS := cpu.o tests/test.o
+ROM_TEST_OBJS := cpu.o tests/rom_test.o
 
-all: ces test
+all: ces test rom_test
 
 ces: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 test: $(TEST_OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+rom_test: $(ROM_TEST_OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 %.o: %.c
@@ -23,7 +27,7 @@ test: $(TEST_OBJS)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
-	rm *.o ces test tests/*.o
+	rm *.o ces test rom_test tests/*.o
 
 .PHONY:
-	all clean test
+	all clean test rom_test

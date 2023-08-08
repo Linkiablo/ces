@@ -40,8 +40,17 @@
 #define CHECK_FLAG_V(cpu, m, n, res)                                           \
     SET_FLAG(cpu, FLAG_V, ((m ^ res) & (n ^ res) & 0x80) != 0)
 
+// in debug mode add function name and addressmode name to struct
+#ifdef DEBUG
+#define INSTRUCTION(i, m, c, cb)                                               \
+    {                                                                          \
+        .name = #i, .mode_name = #m, .inst = i, .mode = m, .cycles = c,        \
+        .check_boundary = cb                                                   \
+    }
+#else
 #define INSTRUCTION(i, m, c, cb)                                               \
     { .inst = i, .mode = m, .cycles = c, .check_boundary = cb }
+#endif
 
 /* private methods because of possible undefined order of operations */
 static uint8_t _read_8(cpu_t *cpu) { return cpu->mem[cpu->pc++]; }
@@ -137,8 +146,10 @@ static uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode,
         int8_t offset_rel = READ_8(cpu);
         offset = cpu->pc + offset_rel;
         break;
+    case IMPLIED:
+        break;
     default:
-        fprintf(stderr, "ERROR: unknown address mode!");
+        fprintf(stderr, "ERROR: unknown address mode!\n");
         exit(1);
     }
 
@@ -155,6 +166,10 @@ static uint8_t *get_oper_ptr(cpu_t *cpu, enum address_mode mode,
 typedef void (*instruction_fn)(cpu_t *cpu, uint8_t *oper_ptr);
 
 typedef struct instruction_t {
+#ifdef DEBUG
+    char *name;
+    char *mode_name;
+#endif
     instruction_fn inst;
     enum address_mode mode;
     uint8_t cycles;
@@ -1408,10 +1423,20 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
     INSTRUCTION(inc, ABS_X, 7, false),         // 0xFE
 };
 
+#ifdef DEBUG
+#define LOG_INST(ins)                                                          \
+    printf("INFO: instruction: %s\nINFO: mode: %s\nINFO: cycles: %d\n",        \
+           ins.name, ins.mode_name, ins.cycles);
+#endif
+
 int execute(cpu_t *cpu) {
     instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
     i.inst(cpu, get_oper_ptr(cpu, i.mode, i.check_boundary));
     cpu->cycles += i.cycles;
+
+#ifdef DEBUG
+    LOG_INST(i);
+#endif
 
     return 0;
 }
