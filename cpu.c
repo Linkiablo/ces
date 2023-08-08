@@ -1165,7 +1165,7 @@ void txs(cpu_t *cpu, uint8_t *oper_ptr) { cpu->sp = cpu->x; }
 //     implied		TYA		98	1	2
 void tya(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = cpu->y; }
 
-instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
+static instruction_t const INSTRUCTION_LOOKUP[256] = {
     INSTRUCTION(brk, IMPLIED, 7, false),       // 0x00
     INSTRUCTION(ora, PRE_INDIRECT, 6, false),  // 0x01
     INSTRUCTION(nop, IMPLIED, 2, false),       // 0x02
@@ -1421,6 +1421,7 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
     INSTRUCTION(nop, IMPLIED, 2, false),       // 0xFC
     INSTRUCTION(sbc, ABS_X, 4, true),          // 0xFD
     INSTRUCTION(inc, ABS_X, 7, false),         // 0xFE
+    INSTRUCTION(nop, IMPLIED, 2, false),       // 0xFF
 };
 
 #ifdef DEBUG
@@ -1430,8 +1431,10 @@ instruction_t const INSTRUCTION_LOOKUP[0xFF] = {
 #endif
 
 int execute(cpu_t *cpu) {
-    instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
-    i.inst(cpu, get_oper_ptr(cpu, i.mode, i.check_boundary));
+    uint8_t opcode = READ_8(cpu);
+    instruction_t i = INSTRUCTION_LOOKUP[opcode];
+    uint8_t *oper_ptr = get_oper_ptr(cpu, i.mode, i.check_boundary);
+    i.inst(cpu, oper_ptr);
     cpu->cycles += i.cycles;
 
 #ifdef DEBUG
