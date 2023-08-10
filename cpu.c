@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BASE_STACK_OFFSET 0x01FF
+#define BASE_STACK_OFFSET 0x0100
 #define NMI_OFFSET 0xFFFA
 #define IRQ_OFFSET 0xFFFE
 
@@ -16,7 +16,7 @@
 #define LOAD_16(addr) (LOAD_8(addr) | (LOAD_8(addr + 1) << 8))
 
 /* push byte to current sp and increase sp */
-#define PUSH_8(cpu, val) *(cpu->mem + BASE_STACK_OFFSET - (cpu->sp++)) = val;
+#define PUSH_8(cpu, val) cpu->mem[BASE_STACK_OFFSET + (cpu->sp--)] = val;
 /* decrease sp and read byte */
 #define POP_8(cpu) _pop_8(cpu)
 
@@ -55,7 +55,7 @@
 /* private methods because of possible undefined order of operations */
 static uint8_t _read_8(cpu_t *cpu) { return cpu->mem[cpu->pc++]; }
 static uint8_t _pop_8(cpu_t *cpu) {
-    return cpu->mem[BASE_STACK_OFFSET - (--cpu->sp)];
+    return cpu->mem[BASE_STACK_OFFSET + (++cpu->sp)];
 }
 
 void init_cpu(cpu_t *cpu, size_t mem_size) {
@@ -502,9 +502,9 @@ void clv(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_V); }
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
 void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
-    int8_t res = (cpu->a) - oper;
+    uint8_t res = (cpu->a) - oper;
 
     if ((cpu->a) < oper) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
@@ -535,7 +535,7 @@ void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
 //     zeropage		CPX oper	E4	2	3
 //     absolute		CPX oper	EC	3	4
 void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
     int8_t res = (cpu->x) - oper;
 
@@ -568,9 +568,9 @@ void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
 //     zeropage		CPY oper	C4	2	3
 //     absolute		CPY oper	CC	3	4
 void cpy(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
-    int8_t res = (cpu->y) - oper;
+    uint8_t res = (cpu->y) - oper;
 
     if ((cpu->y) < oper) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
@@ -722,7 +722,12 @@ void iny(cpu_t *cpu, uint8_t *oper_ptr) {
 //     addressing	assembler	opc	bytes	cycles
 //     absolute		JMP oper	4C	3	3
 //     indirect		JMP (oper)	6C	3	5
-void jmp(cpu_t *cpu, uint8_t *oper_ptr) { cpu->pc = LOAD_16(oper_ptr); }
+void jmp(cpu_t *cpu, uint8_t *oper_ptr) {
+    // get_oper_ptr returns cpu->mem + offset = cpu->mem + new_pc
+    // => new_pc = (cpu->mem + new_pc) - cpu->mem
+    // 		== oper_ptr
+    cpu->pc = oper_ptr - cpu->mem;
+}
 
 // JSR
 //
@@ -738,7 +743,7 @@ void jmp(cpu_t *cpu, uint8_t *oper_ptr) { cpu->pc = LOAD_16(oper_ptr); }
 void jsr(cpu_t *cpu, uint8_t *oper_ptr) {
     // already at pc + 3 because operand was read
     PUSH_16(cpu, (cpu->pc - 1));
-    cpu->pc = LOAD_16(oper_ptr);
+    cpu->pc = oper_ptr - cpu->mem;
 }
 
 // LDA
@@ -1108,7 +1113,11 @@ void sty(cpu_t *cpu, uint8_t *oper_ptr) { *oper_ptr = cpu->y; }
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		TAX		AA	1	2
-void tax(cpu_t *cpu, uint8_t *oper_ptr) { cpu->x = cpu->a; }
+void tax(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->x = cpu->a;
+    CHECK_FLAG_N(cpu, cpu->x);
+    CHECK_FLAG_Z(cpu, cpu->x);
+}
 
 // TAY
 //
@@ -1119,7 +1128,11 @@ void tax(cpu_t *cpu, uint8_t *oper_ptr) { cpu->x = cpu->a; }
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		TAY		A8	1	2
-void tay(cpu_t *cpu, uint8_t *oper_ptr) { cpu->y = cpu->a; }
+void tay(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->y = cpu->a;
+    CHECK_FLAG_N(cpu, cpu->y);
+    CHECK_FLAG_Z(cpu, cpu->y);
+}
 
 // TSX
 //
@@ -1130,7 +1143,11 @@ void tay(cpu_t *cpu, uint8_t *oper_ptr) { cpu->y = cpu->a; }
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		TSX		BA	1	2
-void tsx(cpu_t *cpu, uint8_t *oper_ptr) { cpu->x = cpu->sp; }
+void tsx(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->x = cpu->sp;
+    CHECK_FLAG_N(cpu, cpu->x);
+    CHECK_FLAG_Z(cpu, cpu->x);
+}
 
 // TXA
 //
@@ -1141,7 +1158,11 @@ void tsx(cpu_t *cpu, uint8_t *oper_ptr) { cpu->x = cpu->sp; }
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		TXA		8A	1	2
-void txa(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = cpu->x; }
+void txa(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a = cpu->x;
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 // TXS
 //
@@ -1163,7 +1184,11 @@ void txs(cpu_t *cpu, uint8_t *oper_ptr) { cpu->sp = cpu->x; }
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		TYA		98	1	2
-void tya(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = cpu->y; }
+void tya(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a = cpu->y;
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 static instruction_t const INSTRUCTION_LOOKUP[256] = {
     INSTRUCTION(brk, IMPLIED, 7, false),       // 0x00
@@ -1426,13 +1451,17 @@ static instruction_t const INSTRUCTION_LOOKUP[256] = {
 
 #ifdef DEBUG
 #define LOG_INST(ins)                                                          \
-    printf("INFO: instruction: %s\nINFO: mode: %s\nINFO: cycles: %d\n",        \
-           ins.name, ins.mode_name, ins.cycles);
+    printf("INFO: instruction: %s mode: %s cycles: %d\n", ins.name,            \
+           ins.mode_name, ins.cycles);
 #endif
 
 int execute(cpu_t *cpu) {
-    uint8_t opcode = READ_8(cpu);
-    instruction_t i = INSTRUCTION_LOOKUP[opcode];
+    if (cpu->pc >= 0xFFFF) {
+        fprintf(stdout, "INFO: program finished: PC reached end of RAM\n");
+        exit(0);
+    };
+
+    instruction_t i = INSTRUCTION_LOOKUP[READ_8(cpu)];
     uint8_t *oper_ptr = get_oper_ptr(cpu, i.mode, i.check_boundary);
     i.inst(cpu, oper_ptr);
     cpu->cycles += i.cycles;
