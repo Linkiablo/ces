@@ -62,7 +62,7 @@ void init_cpu(cpu_t *cpu, size_t mem_size) {
     memset(cpu, 0, sizeof(cpu_t));
 
     /* PC 16 bit wide */
-    assert(mem_size <= UINT16_MAX);
+    assert(mem_size <= UINT16_MAX + 1);
     cpu->mem_size = mem_size;
 
     cpu->mem = (uint8_t *)malloc(mem_size);
@@ -394,12 +394,13 @@ void bpl(cpu_t *cpu, uint8_t *oper_ptr) {
 void brk(cpu_t *cpu, uint8_t *oper_ptr) {
     // +1 because pc was increased after reading the opcode
     PUSH_16(cpu, (cpu->pc + 1));
-    PUSH_8(cpu, ((cpu->p) | FLAG_B));
+    PUSH_8(cpu, ((cpu->p) | FLAG_B | (1 << 5)));
 
     SET_FLAG(cpu, FLAG_I, true);
     SET_FLAG(cpu, FLAG_B, true);
+    SET_FLAG(cpu, (1 << 5), true);
 
-    cpu->pc = IRQ_OFFSET;
+    cpu->pc = LOAD_16(cpu->mem + IRQ_OFFSET);
 }
 
 // BVC
@@ -502,9 +503,9 @@ void clv(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_V); }
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
 void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
-    uint8_t oper = *oper_ptr;
+    int8_t oper = *oper_ptr;
 
-    uint8_t res = (cpu->a) - oper;
+    int8_t res = (cpu->a) - oper;
 
     if ((cpu->a) < oper) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
@@ -535,9 +536,10 @@ void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
 //     zeropage		CPX oper	E4	2	3
 //     absolute		CPX oper	EC	3	4
 void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
+    // dtypes for comparison oper have to be the same as register
     uint8_t oper = *oper_ptr;
 
-    int8_t res = (cpu->x) - oper;
+    uint8_t res = (cpu->x) - oper;
 
     if ((cpu->x) < oper) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
@@ -901,7 +903,11 @@ void php(cpu_t *cpu, uint8_t *oper_ptr) {
 //     +	+	-	-	-	-
 //     addressing	assembler	opc	bytes	cycles
 //     implied		PLA		68	1	4
-void pla(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = POP_8(cpu); }
+void pla(cpu_t *cpu, uint8_t *oper_ptr) {
+    cpu->a = POP_8(cpu);
+    CHECK_FLAG_N(cpu, cpu->a);
+    CHECK_FLAG_Z(cpu, cpu->a);
+}
 
 // PLP
 //
@@ -916,7 +922,7 @@ void pla(cpu_t *cpu, uint8_t *oper_ptr) { cpu->a = POP_8(cpu); }
 //     addressing	assembler	opc	bytes	cycles
 //     implied		PLP		28	1	4
 void plp(cpu_t *cpu, uint8_t *oper_ptr) {
-    cpu->p = POP_8(cpu) | ~FLAG_B | ~(1 << 5);
+    cpu->p = POP_8(cpu) & ~FLAG_B & ~(1 << 5);
 }
 
 // ROL
@@ -983,7 +989,7 @@ void ror(cpu_t *cpu, uint8_t *oper_ptr) {
 //     addressing	assembler	opc	bytes	cycles
 //     implied		RTI		40	1	6
 void rti(cpu_t *cpu, uint8_t *oper_ptr) {
-    cpu->p = POP_8(cpu) | ~FLAG_B | ~(1 << 5);
+    cpu->p = POP_8(cpu) & ~FLAG_B & ~(1 << 5);
     cpu->pc = POP_16(cpu);
 }
 
@@ -1450,13 +1456,14 @@ static instruction_t const INSTRUCTION_LOOKUP[256] = {
 };
 
 #ifdef DEBUG
+uint64_t ins_count = 0;
 #define LOG_INST(ins)                                                          \
-    printf("INFO: instruction: %s mode: %s cycles: %d\n", ins.name,            \
-           ins.mode_name, ins.cycles);
+    printf("INFO: %ld instruction: %s mode: %s cycles: %d\n", ins_count++,     \
+           ins.name, ins.mode_name, ins.cycles);
 #endif
 
 int execute(cpu_t *cpu) {
-    if (cpu->pc >= 0xFFFF) {
+    if (cpu->pc == 0xFFFF) {
         fprintf(stdout, "INFO: program finished: PC reached end of RAM\n");
         exit(0);
     };
