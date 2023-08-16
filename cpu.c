@@ -503,21 +503,21 @@ void clv(cpu_t *cpu, uint8_t *oper_ptr) { cpu->p &= ~(FLAG_V); }
 //     (indirect,X)	CMP (oper,X)	C1	2	6
 //     (indirect),Y	CMP (oper),Y	D1	2	5*
 void cmp(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
-    int8_t res = (cpu->a) - oper;
+    int8_t res = ((uint8_t)cpu->a) - oper;
 
-    if ((cpu->a) < oper) {
+    if (res < 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
         CHECK_FLAG_N(cpu, res);
     }
 
-    if ((cpu->a) == oper) {
+    if (res == 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
         SET_FLAG(cpu, FLAG_N, false);
     }
 
-    if ((cpu->a) > oper) {
+    if (res > 0) {
         SET_FLAG(cpu, FLAG_Z, false);
         SET_FLAG(cpu, FLAG_C, true);
         CHECK_FLAG_N(cpu, res);
@@ -539,19 +539,19 @@ void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
     // dtypes for comparison oper have to be the same as register
     uint8_t oper = *oper_ptr;
 
-    uint8_t res = (cpu->x) - oper;
+    int8_t res = cpu->x - oper;
 
-    if ((cpu->x) < oper) {
+    if (res < 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
         CHECK_FLAG_N(cpu, res);
     }
 
-    if ((cpu->x) == oper) {
+    if (res == 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
         SET_FLAG(cpu, FLAG_N, false);
     }
 
-    if ((cpu->x) > oper) {
+    if (res > 0) {
         SET_FLAG(cpu, FLAG_Z, false);
         SET_FLAG(cpu, FLAG_C, true);
         CHECK_FLAG_N(cpu, res);
@@ -572,19 +572,19 @@ void cpx(cpu_t *cpu, uint8_t *oper_ptr) {
 void cpy(cpu_t *cpu, uint8_t *oper_ptr) {
     uint8_t oper = *oper_ptr;
 
-    uint8_t res = (cpu->y) - oper;
+    int8_t res = cpu->y - oper;
 
-    if ((cpu->y) < oper) {
+    if (res < 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, false);
         CHECK_FLAG_N(cpu, res);
     }
 
-    if ((cpu->y) == oper) {
+    if (res == 0) {
         SET_FLAG(cpu, FLAG_Z | FLAG_C, true);
         SET_FLAG(cpu, FLAG_N, false);
     }
 
-    if ((cpu->y) > oper) {
+    if (res > 0) {
         SET_FLAG(cpu, FLAG_Z, false);
         SET_FLAG(cpu, FLAG_C, true);
         CHECK_FLAG_N(cpu, res);
@@ -675,10 +675,13 @@ void eor(cpu_t *cpu, uint8_t *oper_ptr) {
 //     absolute		INC oper	EE	3	6
 //     absolute,X	INC oper,X	FE	3	7
 void inc(cpu_t *cpu, uint8_t *oper_ptr) {
-    *oper_ptr += 1;
+    int8_t oper = *oper_ptr;
+    int8_t res = oper + 1;
 
-    CHECK_FLAG_N(cpu, *oper_ptr);
-    CHECK_FLAG_Z(cpu, *oper_ptr);
+    CHECK_FLAG_N(cpu, res);
+    CHECK_FLAG_Z(cpu, res);
+
+    *oper_ptr = res;
 }
 
 // INX
@@ -691,7 +694,9 @@ void inc(cpu_t *cpu, uint8_t *oper_ptr) {
 //     addressing	assembler	opc	bytes	cycles
 //     implied		INX		E8	1	2
 void inx(cpu_t *cpu, uint8_t *oper_ptr) {
-    cpu->x += 1;
+    int8_t oper = cpu->x;
+    oper++;
+    cpu->x = oper;
 
     CHECK_FLAG_N(cpu, cpu->x);
     CHECK_FLAG_Z(cpu, cpu->x);
