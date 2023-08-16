@@ -953,6 +953,9 @@ void rol(cpu_t *cpu, uint8_t *oper_ptr) {
     CHECK_FLAG_C(cpu, res);
 
     *oper_ptr = res & 0xFF;
+
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
 }
 
 // ROR
@@ -979,6 +982,9 @@ void ror(cpu_t *cpu, uint8_t *oper_ptr) {
     SET_FLAG(cpu, FLAG_C, carry_out);
 
     *oper_ptr = res & 0xFF;
+
+    CHECK_FLAG_N(cpu, *oper_ptr);
+    CHECK_FLAG_Z(cpu, *oper_ptr);
 }
 
 // RTI
@@ -1029,7 +1035,7 @@ void sbc(cpu_t *cpu, uint8_t *oper_ptr) {
     int8_t oper = *oper_ptr;
 
     // carry works, because carry flag is the first bit
-    int16_t res = oper - cpu->a - (cpu->p & FLAG_C);
+    int16_t res = cpu->a - oper - (cpu->p & FLAG_C);
 
     CHECK_FLAG_N(cpu, res);
     CHECK_FLAG_Z(cpu, res);
