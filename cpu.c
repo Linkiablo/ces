@@ -1035,12 +1035,13 @@ void sbc(cpu_t *cpu, uint8_t *oper_ptr) {
     int8_t oper = *oper_ptr;
 
     // carry works, because carry flag is the first bit
-    int16_t res = cpu->a - oper - (cpu->p & FLAG_C);
+    // + C because sbc is adc in ones-complement
+    int16_t res = cpu->a - oper - !IS_FLAG_SET(cpu, FLAG_C);
 
     CHECK_FLAG_N(cpu, res);
     CHECK_FLAG_Z(cpu, res);
-    CHECK_FLAG_C(cpu, res);
-    CHECK_FLAG_V(cpu, oper, cpu->a, res);
+    SET_FLAG(cpu, FLAG_C, (!(res >> 8)));
+    CHECK_FLAG_V(cpu, cpu->a, oper, res);
 
     cpu->a = res & 0xFF;
 }
