@@ -31,7 +31,7 @@
     (cond ? (cpu->p |= flag) : (cpu->p &= ~(flag)))
 
 #define CHECK_FLAG_N(cpu, res) SET_FLAG(cpu, FLAG_N, ((res & 128) != 0))
-#define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, ((res & 0xFF00) != 0))
+#define CHECK_FLAG_C(cpu, res) SET_FLAG(cpu, FLAG_C, ((res & 256) != 0))
 // don't account for carry / overflow
 #define CHECK_FLAG_Z(cpu, res) SET_FLAG(cpu, FLAG_Z, ((res & 0xFF) == 0))
 // v flag:
@@ -193,17 +193,41 @@ typedef struct instruction_t {
 //     (indirect,X)	ADC (oper,X)	61	2	6
 //     (indirect),Y	ADC (oper),Y	71	2	5*
 void adc(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
-    // carry works, because carry flag is the first bit
-    int16_t res = oper + cpu->a + (cpu->p & FLAG_C);
+    if (IS_FLAG_SET(cpu, FLAG_D)) {
+        uint16_t lower = (cpu->a & 0x0F) + (oper & 0x0F) + (cpu->p & FLAG_C);
+        uint16_t higher = (cpu->a & 0xF0) + (oper & 0xF0);
 
-    CHECK_FLAG_N(cpu, res);
-    CHECK_FLAG_Z(cpu, res);
-    CHECK_FLAG_C(cpu, res);
-    CHECK_FLAG_V(cpu, oper, cpu->a, res);
+        if (lower > 0x09) {
+            higher += 0x10;
+            lower += 0x06;
+        }
 
-    cpu->a = res & 0xFF;
+        if (higher > 0x90) {
+            higher += 0x60;
+        }
+
+        uint16_t res = (lower & 0x0F) | (higher & 0xF0);
+
+        CHECK_FLAG_C(cpu, higher);
+        CHECK_FLAG_N(cpu, res);
+        CHECK_FLAG_Z(cpu, res);
+        CHECK_FLAG_V(cpu, cpu->a, higher, res);
+
+        cpu->a = res & 0xFF;
+
+    } else {
+        // carry works, because carry flag is the first bit
+        uint16_t res = (uint8_t)cpu->a + oper + (cpu->p & FLAG_C);
+
+        CHECK_FLAG_N(cpu, res);
+        CHECK_FLAG_Z(cpu, res);
+        CHECK_FLAG_C(cpu, res);
+        CHECK_FLAG_V(cpu, cpu->a, oper, res);
+
+        cpu->a = res & 0xFF;
+    }
 }
 
 // AND
@@ -1032,18 +1056,44 @@ void rts(cpu_t *cpu, uint8_t *oper_ptr) { cpu->pc = POP_16(cpu) + 1; }
 //     (indirect,X)	SBC (oper,X)	E1	2	6
 //     (indirect),Y	SBC (oper),Y	F1	2	5*
 void sbc(cpu_t *cpu, uint8_t *oper_ptr) {
-    int8_t oper = *oper_ptr;
+    uint8_t oper = *oper_ptr;
 
-    // carry works, because carry flag is the first bit
-    // + C because sbc is adc in ones-complement
-    int16_t res = cpu->a - oper - !IS_FLAG_SET(cpu, FLAG_C);
+    if (IS_FLAG_SET(cpu, FLAG_D)) {
+        uint16_t lower = (uint8_t)(cpu->a & 0x0F) + (uint8_t)(~(oper & 0x0F)) +
+                         (cpu->p & FLAG_C);
+        uint16_t higher = (uint8_t)(cpu->a & 0xF0) - (uint8_t)(~(oper & 0xF0));
 
-    CHECK_FLAG_N(cpu, res);
-    CHECK_FLAG_Z(cpu, res);
-    SET_FLAG(cpu, FLAG_C, (!(res >> 8)));
-    CHECK_FLAG_V(cpu, cpu->a, oper, res);
+        if (lower & 0x10) {
+            higher -= 0x10;
+            lower -= 0x06;
+        }
 
-    cpu->a = res & 0xFF;
+        if (higher > 0x0100) {
+            higher -= 0x60;
+        }
+
+        uint16_t res = (lower & 0x0F) | (higher & 0xF0);
+
+        CHECK_FLAG_C(cpu, higher);
+        CHECK_FLAG_N(cpu, res);
+        CHECK_FLAG_Z(cpu, res);
+        CHECK_FLAG_V(cpu, cpu->a, higher, res);
+
+        cpu->a = res & 0xFF;
+
+    } else {
+
+        // carry works, because carry flag is the first bit
+        // + C because sbc is adc in ones-complement
+        uint16_t res = (uint8_t)cpu->a + (uint8_t)(~oper) + (cpu->p & FLAG_C);
+
+        CHECK_FLAG_N(cpu, res);
+        CHECK_FLAG_Z(cpu, res);
+        CHECK_FLAG_C(cpu, res);
+        CHECK_FLAG_V(cpu, cpu->a, ~oper, res);
+
+        cpu->a = res & 0xFF;
+    }
 }
 
 // SEC

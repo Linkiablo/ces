@@ -1,7 +1,7 @@
 
 CC := gcc
 
-CFLAGS := -Wall -Wextra -Wpedantic -ggdb3 -DDEBUG -Wno-unused-parameter -fsanitize=address -fsanitize=leak 
+CFLAGS := -Wall -Wextra -Wpedantic -ggdb3 -Wno-unused-parameter -fsanitize=address -fsanitize=leak # -DDEBUG
 LIBS := 
 
 OBJS := main.o cpu.o
