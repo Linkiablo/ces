@@ -56,7 +56,8 @@ void test_rom() {
     printf("Time elapsed: %ld.%06ld\n", (long int)diff.tv_sec,
            (long int)diff.tv_usec);
     printf("Cycles: %ld\n", cpu.cycles);
-    uint64_t hertz = (1000000 / diff.tv_usec) * cpu.cycles;
+    uint64_t hertz =
+        cpu.cycles / (((double)diff.tv_usec / 100000) + diff.tv_sec);
     printf("Hz: %ld\n", hertz);
     printf("MHz: %ld\n", hertz / 1000000);
 

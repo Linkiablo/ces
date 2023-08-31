@@ -196,8 +196,9 @@ void adc(cpu_t *cpu, uint8_t *oper_ptr) {
     uint8_t oper = *oper_ptr;
 
     if (IS_FLAG_SET(cpu, FLAG_D)) {
-        uint16_t lower = (cpu->a & 0x0F) + (oper & 0x0F) + (cpu->p & FLAG_C);
-        uint16_t higher = (cpu->a & 0xF0) + (oper & 0xF0);
+        uint16_t lower =
+            (((uint8_t)cpu->a) & 0x0F) + (oper & 0x0F) + (cpu->p & FLAG_C);
+        uint16_t higher = (((uint8_t)cpu->a) & 0xF0) + (oper & 0xF0);
 
         if (lower > 0x09) {
             higher += 0x10;
@@ -1059,25 +1060,28 @@ void sbc(cpu_t *cpu, uint8_t *oper_ptr) {
     uint8_t oper = *oper_ptr;
 
     if (IS_FLAG_SET(cpu, FLAG_D)) {
-        uint16_t lower = (uint8_t)(cpu->a & 0x0F) + (uint8_t)(~(oper & 0x0F)) +
-                         (cpu->p & FLAG_C);
-        uint16_t higher = (uint8_t)(cpu->a & 0xF0) - (uint8_t)(~(oper & 0xF0));
+        uint16_t lower =
+            (((uint8_t)cpu->a) & 0x0F) - (oper & 0x0F) - !(cpu->p & FLAG_C);
+        uint16_t higher = (((uint8_t)cpu->a) & 0xF0) - (oper & 0xF0);
 
-        if (lower & 0x10) {
-            higher -= 0x10;
+        if (lower > 0x9) {
+            higher -= 0x1;
             lower -= 0x06;
         }
 
-        if (higher > 0x0100) {
+        if (higher & 0x0100) {
             higher -= 0x60;
         }
 
         uint16_t res = (lower & 0x0F) | (higher & 0xF0);
 
-        CHECK_FLAG_C(cpu, higher);
-        CHECK_FLAG_N(cpu, res);
-        CHECK_FLAG_Z(cpu, res);
-        CHECK_FLAG_V(cpu, cpu->a, higher, res);
+        // ?????
+        uint16_t flag_res =
+            (uint8_t)cpu->a + (uint8_t)(~oper) + (cpu->p & FLAG_C);
+        CHECK_FLAG_N(cpu, flag_res);
+        CHECK_FLAG_Z(cpu, flag_res);
+        CHECK_FLAG_C(cpu, flag_res);
+        CHECK_FLAG_V(cpu, cpu->a, ~oper, flag_res);
 
         cpu->a = res & 0xFF;
 
